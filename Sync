@@ -1,0 +1,25 @@
+// Contoh logika sederhana untuk simpan ke GitHub
+async function saveToGithub(newData) {
+    const token = "TOKEN_GITHUB_ANDA"; // Simpan ini di localStorage browser Anda saja
+    const repo = "gedemahendrawijaya-debug/propai-geo";
+    const path = "data.json";
+
+    // 1. Ambil SHA file lama (dibutuhkan GitHub untuk update)
+    const res = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`);
+    const fileData = await res.json();
+
+    // 2. Kirim data baru
+    await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
+        method: "PUT",
+        headers: {
+            "Authorization": `token ${token}`,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            message: "Update data properti",
+            content: btoa(JSON.stringify(newData)), // Encode ke Base64
+            sha: fileData.sha
+        })
+    });
+    alert("Data tersinkronisasi ke GitHub!");
+}
