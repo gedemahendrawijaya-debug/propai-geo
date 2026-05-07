@@ -294,17 +294,12 @@ select.fi-full option{background:var(--s2);}
     <div class="ntab active" onclick="switchSection('map')">🗺️ Peta</div>
     <div class="ntab" onclick="switchSection('inventory')">🏠 Inventory</div>
     <div class="ntab" onclick="switchSection('clients')">👥 Clients</div>
-    <div class="ntab" onclick="switchSection('matching')">⚡ Matching</div>
-    <div class="ntab" onclick="switchSection('followup')">📋 Follow-up</div>
     <div class="ntab" onclick="switchSection('parser')">📥 Parser</div>
   </div>
   <div class="top-acts">
-    <button class="btn btn-outline btn-sm" onclick="openKMLModal()">📁 KML</button>
+    <button class="btn btn-blue btn-sm" onclick="handleCloudSync()">☁️ Sync Cloud</button>
     <button class="btn btn-outline btn-sm" id="add-pin-btn" onclick="toggleAddPin()">📍 Pin</button>
-    <span class="sl-badge" id="sl-badge">0 Shortlist</span>
-    <button class="btn btn-green btn-sm" onclick="openShareMode()">📤 Share</button>
     <button class="btn btn-gold btn-sm" onclick="openAddModal()">+ Properti</button>
-    <button class="btn btn-ghost btn-sm" onclick="openModal('add-client')">+ Client</button>
   </div>
 </div>
 
