@@ -297,10 +297,12 @@ select.fi-full option{background:var(--s2);}
     <div class="ntab" onclick="switchSection('parser')">📥 Parser</div>
   </div>
   <div class="top-acts">
+    <button class="btn btn-outline btn-sm" onclick="openKMLModal()">📁 KML</button>
     <button class="btn btn-blue btn-sm" onclick="handleCloudSync()">☁️ Sync Cloud</button>
     <button class="btn btn-outline btn-sm" id="add-pin-btn" onclick="toggleAddPin()">📍 Pin</button>
+    <span class="sl-badge" id="sl-badge">0 Shortlist</span>
     <button class="btn btn-gold btn-sm" onclick="openAddModal()">+ Properti</button>
-  </div>
+</div>
 </div>
 
 <!-- LAYOUT -->
