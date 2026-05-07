@@ -1606,5 +1606,101 @@ document.querySelectorAll('.mbk').forEach(b=>{b.addEventListener('click',e=>{if(
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.mbk.open').forEach(m=>m.classList.remove('open'));if(document.getElementById('share-overlay').classList.contains('open'))closeShareMode();if(document.getElementById('lightbox').classList.contains('open'))closeLB();if(addPinMode)toggleAddPin();}});
 new MutationObserver(()=>{if(shareMap)setTimeout(()=>shareMap.invalidateSize(),150);}).observe(document.getElementById('share-overlay'),{attributes:true,attributeFilter:['class']});
 </script>
+<script>
+/* ==========================================
+   CLOUD SYNC ENGINE (GitHub API)
+   ========================================== */
+
+const GITHUB_CONFIG = {
+    repo: 'gedemahendrawijaya-debug/propai-geo',
+    path: 'data.json'
+};
+
+// Ambil token dari storage atau tanya user
+function getGithubToken() {
+    let token = localStorage.getItem('gh_token');
+    if (!token || token === 'null') {
+        token = prompt("Masukkan GitHub Personal Access Token Anda:");
+        if (token) localStorage.setItem('gh_token', token);
+    }
+    return token;
+}
+
+// Fungsi utama Kirim ke Cloud
+async function handleCloudSync() {
+    const token = getGithubToken();
+    if (!token) return;
+
+    // Ambil data yang ada di aplikasi Anda
+    const dataToSync = {
+        inventory: JSON.parse(localStorage.getItem('inventory')) || [],
+        clients: JSON.parse(localStorage.getItem('clients')) || [],
+        lastSync: new Date().toISOString()
+    };
+
+    try {
+        showNotif("Menghubungkan ke Cloud...");
+        const url = `https://api.github.com/repos/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.path}`;
+        
+        // 1. Ambil SHA file (wajib untuk update GitHub)
+        const res = await fetch(url, { headers: { 'Authorization': `token ${token}` }});
+        const fileData = await res.json();
+
+        // 2. Update file di GitHub
+        const update = await fetch(url, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `token ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                message: "Sync dari PropAI GEO: " + new Date().toLocaleString(),
+                content: btoa(unescape(encodeURIComponent(JSON.stringify(dataToSync, null, 2)))),
+                sha: fileData.sha
+            })
+        });
+
+        if (update.ok) {
+            alert("✅ Berhasil! Data di PC & HP sekarang sama.");
+        } else {
+            alert("❌ Gagal Sync. Periksa Token atau koneksi.");
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Terjadi kesalahan.");
+    }
+}
+
+// Fungsi Muat data otomatis saat web dibuka
+async function autoLoadFromCloud() {
+    const url = `https://raw.githubusercontent.com/${GITHUB_CONFIG.repo}/main/${GITHUB_CONFIG.path}?t=${Date.now()}`;
+    try {
+        const res = await fetch(url);
+        if (res.ok) {
+            const cloudData = await res.json();
+            if (cloudData.inventory) {
+                localStorage.setItem('inventory', JSON.stringify(cloudData.inventory));
+                localStorage.setItem('clients', JSON.stringify(cloudData.clients));
+                console.log("Data Cloud dimuat.");
+                // Jika ada fungsi render, panggil di sini, misal: renderInventory();
+            }
+        }
+    } catch (err) {
+        console.log("Mode offline atau data belum ada.");
+    }
+}
+
+// Jalankan auto-load saat aplikasi mulai
+document.addEventListener('DOMContentLoaded', autoLoadFromCloud);
+
+function showNotif(msg) {
+    const n = document.getElementById('notif');
+    if(n) {
+        n.innerText = msg;
+        n.style.display = 'block';
+        setTimeout(() => n.style.display = 'none', 3000);
+    }
+}
+</script>
 </body>
 </html>
