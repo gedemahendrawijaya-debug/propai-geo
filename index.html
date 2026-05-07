@@ -1,0 +1,1615 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>PropAI GEO v7.0 — Smart Broker Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root {
+  --gold: #c9a96e;
+  --gold-l: #e4ccaa;
+  --gold-dim: rgba(201,169,110,0.13);
+  --gold-glow: rgba(201,169,110,0.25);
+  --bg: #06080c;
+  --s1: #0c0f16;
+  --s2: #111520;
+  --s3: #181e2c;
+  --s4: #1e2538;
+  --border: rgba(201,169,110,0.16);
+  --border2: rgba(255,255,255,0.06);
+  --text: #e9e5dd;
+  --td: rgba(233,229,221,0.45);
+  --red: #e05050;
+  --green: #48b87a;
+  --blue: #5b8de8;
+  --amber: #f0a030;
+  --purple: #9060d0;
+  --teal: #30b8a8;
+  --f-display: 'Playfair Display', serif;
+  --f-body: 'IBM Plex Sans', sans-serif;
+  --r: 10px;
+  --transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--bg);color:var(--text);font-family:var(--f-body);font-size:13px;display:flex;flex-direction:column;}
+
+/* ===== TOPBAR ===== */
+#topbar{background:var(--s1);border-bottom:1px solid var(--border);padding:0 12px;height:48px;display:flex;align-items:center;gap:10px;flex-shrink:0;z-index:500;}
+.logo{font-family:var(--f-display);font-size:18px;color:var(--gold);letter-spacing:0.5px;white-space:nowrap;flex-shrink:0;display:flex;align-items:center;gap:6px;}
+.logo-badge{font-size:9px;background:var(--gold);color:#000;padding:1px 5px;border-radius:4px;font-family:var(--f-body);font-weight:600;letter-spacing:1px;}
+.nav-tabs{display:flex;gap:1px;flex:1;overflow-x:auto;scrollbar-width:none;}
+.nav-tabs::-webkit-scrollbar{display:none;}
+.ntab{padding:5px 11px;border-radius:6px;cursor:pointer;color:var(--td);white-space:nowrap;font-size:11.5px;transition:var(--transition);border:1px solid transparent;flex-shrink:0;}
+.ntab:hover{color:var(--text);background:var(--s2);}
+.ntab.active{color:var(--gold);background:var(--gold-dim);border-color:var(--border);}
+.top-acts{display:flex;gap:5px;align-items:center;flex-shrink:0;}
+.btn{padding:5px 11px;border-radius:7px;cursor:pointer;font-size:11.5px;font-family:var(--f-body);border:none;display:inline-flex;align-items:center;gap:4px;transition:var(--transition);white-space:nowrap;font-weight:500;line-height:1.4;}
+.btn-gold{background:var(--gold);color:#000;}
+.btn-gold:hover{background:var(--gold-l);}
+.btn-outline{background:transparent;color:var(--gold);border:1px solid var(--border);}
+.btn-outline:hover{background:var(--gold-dim);}
+.btn-green{background:rgba(72,184,122,0.13);color:var(--green);border:1px solid rgba(72,184,122,0.28);}
+.btn-green:hover{background:rgba(72,184,122,0.22);}
+.btn-blue{background:rgba(91,141,232,0.13);color:var(--blue);border:1px solid rgba(91,141,232,0.28);}
+.btn-blue:hover{background:rgba(91,141,232,0.22);}
+.btn-purple{background:rgba(144,96,208,0.13);color:var(--purple);border:1px solid rgba(144,96,208,0.28);}
+.btn-purple:hover{background:rgba(144,96,208,0.22);}
+.btn-red{background:rgba(224,80,80,0.12);color:var(--red);border:1px solid rgba(224,80,80,0.25);}
+.btn-ghost{background:var(--s2);color:var(--td);border:1px solid var(--border2);}
+.btn-ghost:hover{color:var(--text);}
+.btn-sm{padding:3px 8px;font-size:11px;}
+.btn-teal{background:rgba(48,184,168,0.13);color:var(--teal);border:1px solid rgba(48,184,168,0.28);}
+#add-pin-btn.pin-active{background:rgba(224,80,80,0.15);color:var(--red);border:1px solid rgba(224,80,80,0.35);}
+
+/* ===== LAYOUT ===== */
+#layout{display:flex;flex:1;overflow:hidden;}
+#sidebar{width:204px;background:var(--s1);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;scrollbar-width:thin;}
+#center{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+#rpanel{width:290px;background:var(--s1);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;}
+
+/* ===== SECTIONS ===== */
+.section{display:none;flex:1;flex-direction:column;overflow:hidden;}
+.section.active{display:flex;}
+
+/* ===== SIDEBAR ===== */
+.sb-sec{padding:10px;border-bottom:1px solid var(--border);}
+.sb-title{font-size:9px;letter-spacing:2.5px;color:var(--td);text-transform:uppercase;margin-bottom:8px;}
+.stat-card{background:var(--s2);border:1px solid var(--border2);border-radius:8px;padding:8px 10px;margin-bottom:5px;cursor:default;}
+.stat-card:hover{border-color:var(--border);}
+.stat-num{font-family:var(--f-display);font-size:22px;color:var(--gold);line-height:1;}
+.stat-label{font-size:10px;color:var(--td);margin-top:1px;}
+.dot{display:inline-block;width:5px;height:5px;border-radius:50%;margin-right:3px;vertical-align:middle;}
+.pipe-row{display:flex;align-items:center;gap:5px;margin-bottom:3px;font-size:10px;}
+.pipe-fill{height:3px;border-radius:2px;flex:1;opacity:0.65;}
+.nav-item{display:flex;align-items:center;gap:7px;padding:7px 9px;cursor:pointer;border-radius:6px;color:var(--td);font-size:11.5px;transition:var(--transition);}
+.nav-item:hover{background:var(--s2);color:var(--text);}
+.nav-item.active{background:var(--gold-dim);color:var(--gold);}
+.nav-item .ico{width:16px;text-align:center;font-size:13px;}
+
+/* ===== MAP ===== */
+#map{flex:1;min-height:0;z-index:1;}
+.map-bar{padding:6px 10px;background:var(--s1);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex-shrink:0;z-index:2;}
+.lbtn{padding:3px 9px;border-radius:5px;cursor:pointer;font-size:11px;background:var(--s2);color:var(--td);border:1px solid var(--border2);transition:var(--transition);}
+.lbtn.active{background:var(--gold-dim);color:var(--gold);border-color:var(--border);}
+.map-legend{display:flex;gap:8px;font-size:10px;color:var(--td);}
+.leg-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:2px;vertical-align:middle;}
+
+/* ===== RIGHT PANEL ===== */
+.rtabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;}
+.rtab{flex:1;padding:8px 3px;text-align:center;font-size:10px;cursor:pointer;color:var(--td);transition:var(--transition);border-bottom:2px solid transparent;letter-spacing:0.3px;}
+.rtab.active{color:var(--gold);border-bottom-color:var(--gold);}
+.rpanel-content{flex:1;overflow-y:auto;padding:10px;display:none;}
+.rpanel-content.active{display:block;}
+
+/* ===== AI CHAT ===== */
+#chat-messages{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:7px;}
+.msg{padding:8px 10px;border-radius:8px;font-size:11.5px;line-height:1.55;max-width:93%;}
+.msg.user{background:var(--gold-dim);color:var(--gold-l);border:1px solid var(--border);align-self:flex-end;}
+.msg.ai{background:var(--s2);color:var(--text);border:1px solid var(--border2);align-self:flex-start;}
+.msg.loading{opacity:0.5;font-style:italic;}
+.chat-row{padding:8px;border-top:1px solid var(--border);display:flex;gap:5px;flex-shrink:0;}
+.chat-row textarea{flex:1;background:var(--s2);border:1px solid var(--border2);border-radius:6px;padding:7px;color:var(--text);font-family:var(--f-body);font-size:11.5px;resize:none;height:34px;min-height:34px;outline:none;}
+.chat-row textarea:focus{border-color:var(--gold);}
+
+/* ===== TABLES ===== */
+.sec-head{padding:8px 12px;background:var(--s1);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;flex-shrink:0;}
+.sec-head h2{font-family:var(--f-display);font-size:16px;color:var(--gold);}
+.tbl-wrap{flex:1;overflow-y:auto;}
+.tbl-inner{overflow-x:auto;padding:10px;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+thead th{padding:7px 8px;text-align:left;font-size:9.5px;letter-spacing:1.5px;color:var(--td);text-transform:uppercase;border-bottom:1px solid var(--border);background:var(--s1);position:sticky;top:0;z-index:2;}
+tbody tr{border-bottom:1px solid rgba(255,255,255,0.025);transition:background 0.1s;}
+tbody tr:hover{background:var(--s2);}
+td{padding:6px 8px;vertical-align:middle;}
+.pill{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:500;}
+.pill-hot{background:rgba(224,80,80,0.14);color:var(--red);}
+.pill-warm{background:rgba(240,160,48,0.14);color:var(--amber);}
+.pill-cold{background:rgba(91,141,232,0.14);color:var(--blue);}
+.pill-new{background:rgba(72,184,122,0.12);color:var(--green);}
+.pill-closing{background:rgba(201,169,110,0.18);color:var(--gold);}
+.pill-followed{background:rgba(72,184,122,0.14);color:var(--green);}
+.pill-pending{background:rgba(240,160,48,0.14);color:var(--amber);}
+.pill-owner{background:rgba(201,169,110,0.14);color:var(--gold);}
+.pill-buyer{background:rgba(91,141,232,0.14);color:var(--blue);}
+.pill-contacted{background:rgba(72,184,122,0.14);color:var(--green);}
+.pill-notcontacted{background:rgba(144,96,208,0.13);color:var(--purple);}
+.tact{width:24px;height:24px;border-radius:5px;border:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:12px;transition:var(--transition);}
+.tact:hover{transform:scale(1.12);}
+.tact-d{background:var(--gold-dim);}
+.tact-w{background:rgba(72,184,122,0.13);}
+.tact-e{background:rgba(91,141,232,0.13);}
+.tact-x{background:rgba(224,80,80,0.1);}
+.tact-x:hover{background:rgba(224,80,80,0.22);}
+.tact-ai{background:rgba(144,96,208,0.12);}
+.tact-ocr{background:rgba(48,184,168,0.12);}
+
+/* ===== FILTER BAR ===== */
+.fi{background:var(--s2);border:1px solid var(--border2);border-radius:6px;padding:4px 9px;color:var(--text);font-family:var(--f-body);font-size:11.5px;outline:none;transition:var(--transition);}
+.fi:focus{border-color:var(--gold);}
+select.fi option{background:var(--s2);}
+.frow{display:flex;gap:5px;align-items:center;flex-wrap:wrap;}
+
+/* ===== MODAL ===== */
+.mbk{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9000;align-items:center;justify-content:center;padding:10px;}
+.mbk.open{display:flex;}
+.modal{background:var(--s1);border:1px solid var(--border);border-radius:14px;width:100%;max-width:560px;max-height:93vh;overflow-y:auto;padding:20px;scrollbar-width:thin;}
+.modal-wide{max-width:720px;}
+.modal h2{font-family:var(--f-display);font-size:20px;color:var(--gold);margin-bottom:14px;}
+.fg{margin-bottom:10px;}
+.fl{font-size:10px;color:var(--td);letter-spacing:0.8px;text-transform:uppercase;margin-bottom:4px;display:block;}
+.fi-full{width:100%;background:var(--s2);border:1px solid var(--border2);border-radius:7px;padding:8px 11px;color:var(--text);font-family:var(--f-body);font-size:12.5px;outline:none;transition:var(--transition);}
+.fi-full:focus{border-color:var(--gold);}
+select.fi-full option{background:var(--s2);}
+.form-2{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.form-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;}
+.mact{display:flex;gap:7px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap;}
+
+/* ===== MEDIA ===== */
+.media-zone{border:2px dashed var(--border);border-radius:8px;text-align:center;font-size:12px;color:var(--td);cursor:pointer;transition:var(--transition);background:var(--s2);}
+.media-zone:hover{border-color:var(--gold);color:var(--gold);}
+.media-zone-inner{padding:14px;}
+.media-src-btns{display:flex;gap:6px;margin-top:8px;}
+.media-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.mthumb{position:relative;width:72px;height:72px;border-radius:7px;overflow:hidden;border:1px solid var(--border);flex-shrink:0;cursor:pointer;}
+.mthumb img,.mthumb video{width:100%;height:100%;object-fit:cover;}
+.mthumb .mx{position:absolute;top:1px;right:1px;background:rgba(0,0,0,0.7);color:#fff;border:none;border-radius:50%;width:15px;height:15px;cursor:pointer;font-size:8px;display:flex;align-items:center;justify-content:center;z-index:2;}
+.mthumb .mocr{position:absolute;bottom:1px;left:1px;background:rgba(48,184,168,0.85);color:#fff;border:none;border-radius:3px;padding:1px 3px;cursor:pointer;font-size:8px;font-weight:600;}
+.mthumb-vid{background:var(--s3);display:flex;align-items:center;justify-content:center;font-size:24px;}
+.mthumb .geo-tag{position:absolute;bottom:1px;right:1px;background:rgba(72,184,122,0.85);color:#fff;border-radius:3px;padding:1px 3px;font-size:7px;font-weight:600;}
+
+/* ===== CONTACT BADGE ===== */
+.cbadge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:10px;font-size:10px;cursor:pointer;transition:var(--transition);font-weight:500;border:1px solid transparent;}
+.cbadge.yes{background:rgba(72,184,122,0.14);color:var(--green);border-color:rgba(72,184,122,0.28);}
+.cbadge.no{background:rgba(144,96,208,0.12);color:var(--purple);border-color:rgba(144,96,208,0.22);}
+.cbadge:hover{transform:scale(1.05);}
+
+/* ===== SHORTLIST ===== */
+.sl-badge{background:var(--gold-dim);color:var(--gold);border:1px solid var(--border);border-radius:10px;padding:2px 9px;font-size:11px;font-weight:500;}
+
+/* ===== SHARE OVERLAY ===== */
+.share-ov{display:none;position:fixed;inset:0;background:var(--bg);z-index:8000;flex-direction:column;}
+.share-ov.open{display:flex;}
+.share-head{background:var(--s1);border-bottom:1px solid var(--border);padding:9px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.share-title-txt{font-family:var(--f-display);font-size:18px;color:var(--gold);}
+.share-body{display:flex;flex:1;overflow:hidden;}
+.share-map-wrap{flex:1;position:relative;}
+#share-map{height:100%;width:100%;}
+.share-side{width:270px;background:var(--s1);border-left:1px solid var(--border);overflow-y:auto;padding:10px;flex-shrink:0;}
+.scard{background:var(--s2);border:1px solid var(--border2);border-radius:9px;margin-bottom:8px;overflow:hidden;transition:var(--transition);}
+.scard:hover{border-color:var(--border);}
+.scard-img{width:100%;height:100px;object-fit:cover;background:var(--s3);display:flex;align-items:center;justify-content:center;font-size:32px;}
+.scard-body{padding:8px;}
+.scard-name{font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px;}
+.scard-price{font-family:var(--f-display);font-size:13px;color:var(--gold);}
+
+/* ===== LIGHTBOX ===== */
+#lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:99999;align-items:center;justify-content:center;cursor:zoom-out;}
+#lightbox.open{display:flex;}
+#lightbox img,#lightbox video{max-width:90vw;max-height:90vh;border-radius:8px;object-fit:contain;}
+#lb-close{position:fixed;top:16px;right:16px;background:rgba(255,255,255,0.1);color:#fff;border:none;border-radius:50%;width:34px;height:34px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+#lb-nav{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:8px;}
+#lb-nav button{background:rgba(255,255,255,0.1);color:#fff;border:none;border-radius:20px;padding:6px 16px;cursor:pointer;font-size:12px;}
+
+/* ===== GPS ===== */
+.gps-ind{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--green);}
+.gps-pulse{width:7px;height:7px;background:var(--green);border-radius:50%;animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(1.3)}}
+
+/* ===== OCR RESULT ===== */
+.ocr-result{background:rgba(48,184,168,0.1);border:1px solid rgba(48,184,168,0.3);border-radius:8px;padding:10px;margin-top:8px;font-size:12px;}
+.ocr-phone{font-size:14px;font-weight:600;color:var(--teal);letter-spacing:1px;}
+
+/* ===== AI INSIGHT ===== */
+.ai-insight{background:rgba(144,96,208,0.08);border:1px solid rgba(144,96,208,0.22);border-radius:8px;padding:10px;margin-top:8px;font-size:12px;line-height:1.6;}
+.ai-insight-title{font-weight:600;color:var(--purple);margin-bottom:5px;font-size:11px;}
+
+/* ===== NOTIFICATION ===== */
+#notif{position:fixed;top:56px;right:16px;background:var(--s1);border:1px solid var(--gold);border-radius:9px;padding:10px 15px;font-size:12.5px;z-index:9999;display:none;animation:slideIn .25s ease;max-width:280px;box-shadow:0 4px 24px rgba(0,0,0,0.6);}
+@keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* ===== MATCH CARD ===== */
+.mcard{background:var(--s2);border:1px solid var(--border2);border-radius:8px;padding:9px;margin-bottom:7px;}
+.mcard.top{border-color:rgba(201,169,110,0.28);}
+.mbadge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:500;background:rgba(72,184,122,0.14);color:var(--green);}
+
+/* ===== KML ===== */
+.kml-zone{border:2px dashed var(--border);border-radius:8px;padding:18px;text-align:center;font-size:12px;color:var(--td);cursor:pointer;transition:var(--transition);}
+.kml-zone:hover{border-color:var(--gold);color:var(--gold);}
+
+/* ===== DETAIL MODAL ===== */
+.det-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:9px 0;}
+.det-item{background:var(--s2);border-radius:6px;padding:7px;}
+.det-item .lbl{font-size:9.5px;color:var(--td);}
+.det-item .val{font-size:12px;color:var(--gold);font-weight:500;margin-top:1px;}
+.media-scroll{display:flex;gap:7px;overflow-x:auto;padding:4px 0;scrollbar-width:thin;}
+.media-scroll::-webkit-scrollbar{height:3px;}
+.media-scroll-thumb{width:90px;height:65px;border-radius:6px;object-fit:cover;flex-shrink:0;cursor:pointer;border:1px solid var(--border);transition:transform .15s;}
+.media-scroll-thumb:hover{transform:scale(1.04);}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:var(--gold);}
+
+/* ===== LEAFLET OVERRIDE ===== */
+.leaflet-popup-content-wrapper{background:var(--s2)!important;border:1px solid var(--border)!important;border-radius:10px!important;color:var(--text)!important;box-shadow:0 6px 24px rgba(0,0,0,0.8)!important;padding:0!important;}
+.leaflet-popup-tip{background:var(--s2)!important;}
+.leaflet-popup-content{margin:0!important;}
+.leaflet-container{font-family:var(--f-body)!important;}
+.leaflet-control-zoom a{background:var(--s2)!important;color:var(--text)!important;border-color:var(--border)!important;}
+.leaflet-control-zoom a:hover{background:var(--s3)!important;color:var(--gold)!important;}
+
+/* ===== PARSER ===== */
+.parea{width:100%;background:var(--s2);border:1px solid var(--border2);border-radius:8px;padding:10px;color:var(--text);font-family:var(--f-body);font-size:12px;resize:vertical;min-height:80px;outline:none;}
+.parea:focus{border-color:var(--gold);}
+.pres{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:10px;margin-top:8px;font-size:12px;display:none;}
+
+/* ===== PROGRESS ===== */
+.ai-loading{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--td);}
+.ai-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:blink 1.2s infinite;}
+.ai-dot:nth-child(2){animation-delay:.2s;}
+.ai-dot:nth-child(3){animation-delay:.4s;}
+@keyframes blink{0%,80%,100%{opacity:0.2}40%{opacity:1}}
+
+/* ===== MOBILE ===== */
+@media(max-width:800px){
+  #sidebar{display:none;}
+  #rpanel{display:none;}
+  .top-acts .lbl-hide{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div id="topbar">
+  <div class="logo">PropAI <span class="logo-badge">GEO v7</span></div>
+  <div class="nav-tabs">
+    <div class="ntab active" onclick="switchSection('map')">🗺️ Peta</div>
+    <div class="ntab" onclick="switchSection('inventory')">🏠 Inventory</div>
+    <div class="ntab" onclick="switchSection('clients')">👥 Clients</div>
+    <div class="ntab" onclick="switchSection('matching')">⚡ Matching</div>
+    <div class="ntab" onclick="switchSection('followup')">📋 Follow-up</div>
+    <div class="ntab" onclick="switchSection('parser')">📥 Parser</div>
+  </div>
+  <div class="top-acts">
+    <button class="btn btn-outline btn-sm" onclick="openKMLModal()">📁 KML</button>
+    <button class="btn btn-outline btn-sm" id="add-pin-btn" onclick="toggleAddPin()">📍 Pin</button>
+    <span class="sl-badge" id="sl-badge">0 Shortlist</span>
+    <button class="btn btn-green btn-sm" onclick="openShareMode()">📤 Share</button>
+    <button class="btn btn-gold btn-sm" onclick="openAddModal()">+ Properti</button>
+    <button class="btn btn-ghost btn-sm" onclick="openModal('add-client')">+ Client</button>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div id="layout">
+
+<!-- SIDEBAR -->
+<div id="sidebar">
+  <div class="sb-sec">
+    <div class="sb-title">Overview</div>
+    <div class="stat-card"><div class="stat-num" id="stat-total">0</div><div class="stat-label">Total Properti</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-contacted" style="color:var(--green)">0</div><div class="stat-label"><span class="dot" style="background:var(--green)"></span>Dihubungi</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-notcontacted" style="color:var(--purple)">0</div><div class="stat-label"><span class="dot" style="background:var(--purple)"></span>Belum Kontak</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-shortlist" style="color:var(--gold)">0</div><div class="stat-label"><span class="dot" style="background:var(--gold)"></span>Shortlist</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-clients">0</div><div class="stat-label">Client Aktif</div></div>
+  </div>
+  <div class="sb-sec">
+    <div class="sb-title">Pipeline</div>
+    <div class="pipe-row"><span style="width:48px;color:var(--red)"><span class="dot" style="background:var(--red)"></span>Hot</span><div class="pipe-fill" style="background:var(--red)"></div><span id="p-hot">0</span></div>
+    <div class="pipe-row"><span style="width:48px;color:var(--amber)"><span class="dot" style="background:var(--amber)"></span>Warm</span><div class="pipe-fill" style="background:var(--amber)"></div><span id="p-warm">0</span></div>
+    <div class="pipe-row"><span style="width:48px;color:var(--blue)"><span class="dot" style="background:var(--blue)"></span>Cold</span><div class="pipe-fill" style="background:var(--blue)"></div><span id="p-cold">0</span></div>
+    <div class="pipe-row"><span style="width:48px;color:var(--green)"><span class="dot" style="background:var(--green)"></span>New</span><div class="pipe-fill" style="background:var(--green)"></div><span id="p-new">0</span></div>
+  </div>
+  <div class="sb-sec">
+    <div class="sb-title">Navigasi</div>
+    <div class="nav-item active" onclick="switchSection('map')"><span class="ico">🗺️</span>Peta Geo</div>
+    <div class="nav-item" onclick="switchSection('inventory')"><span class="ico">🏠</span>Inventory</div>
+    <div class="nav-item" onclick="switchSection('clients')"><span class="ico">👥</span>Clients</div>
+    <div class="nav-item" onclick="switchSection('matching')"><span class="ico">⚡</span>AI Matching</div>
+    <div class="nav-item" onclick="switchSection('followup')"><span class="ico">📋</span>Follow-up</div>
+    <div class="nav-item" onclick="switchSection('parser')"><span class="ico">📥</span>Parser</div>
+  </div>
+  <div class="sb-sec">
+    <div class="sb-title">GPS Status</div>
+    <div class="gps-ind"><div class="gps-pulse"></div>Siap — klik Pin</div>
+    <div style="margin-top:8px;">
+      <button class="btn btn-purple btn-sm" style="width:100%;justify-content:center;" onclick="runAIRecommendation()">⭐ AI Rekomendasi</button>
+    </div>
+  </div>
+</div>
+
+<!-- CENTER -->
+<div id="center">
+
+  <!-- MAP -->
+  <div class="section active" id="section-map" style="position:relative;">
+    <div class="map-bar">
+      <button class="lbtn active" onclick="setLayer('dark',this)">🌙 Dark</button>
+      <button class="lbtn" onclick="setLayer('street',this)">🗾 Street</button>
+      <button class="lbtn" onclick="setLayer('satellite',this)">🛰️ Satelit</button>
+      <div style="flex:1"></div>
+      <div class="map-legend">
+        <span><span class="leg-dot" style="background:var(--green)"></span>Kontak</span>
+        <span><span class="leg-dot" style="background:var(--amber)"></span>Pending</span>
+        <span><span class="leg-dot" style="background:var(--purple)"></span>Belum</span>
+        <span><span class="leg-dot" style="background:var(--gold)"></span>Shortlist</span>
+      </div>
+      <span id="map-status" style="font-size:10.5px;color:var(--td)">Klik marker untuk detail</span>
+    </div>
+    <div id="map"></div>
+  </div>
+
+  <!-- INVENTORY -->
+  <div class="section" id="section-inventory">
+    <div class="sec-head">
+      <h2>🏠 Inventory Properti</h2>
+      <div class="frow">
+        <input class="fi" placeholder="Cari..." oninput="filterInv()" id="inv-q" style="width:120px;">
+        <select class="fi" id="inv-fa" onchange="filterInv()"><option value="">Semua Area</option></select>
+        <select class="fi" id="inv-ft" onchange="filterInv()"><option value="">Tipe</option><option>Villa</option><option>Tanah</option><option>Rumah</option><option>Komersial</option><option>Apartemen</option></select>
+        <select class="fi" id="inv-fs" onchange="filterInv()"><option value="">Follow-up</option><option>New</option><option>Followed</option><option>Pending</option></select>
+        <select class="fi" id="inv-fc" onchange="filterInv()"><option value="">Kontak</option><option value="yes">✅ Dihubungi</option><option value="no">🔔 Belum</option></select>
+        <select class="fi" id="inv-fsl" onchange="filterInv()"><option value="">Semua</option><option value="1">⭐ Shortlist</option></select>
+      </div>
+    </div>
+    <div class="tbl-wrap"><div class="tbl-inner">
+      <table>
+        <thead><tr>
+          <th>Properti</th><th>Area</th><th>Harga</th><th>KT</th><th>Kontak</th><th>Follow-up</th><th>Media</th><th>GPS</th><th>SL</th><th>Aksi</th>
+        </tr></thead>
+        <tbody id="inv-tbody"></tbody>
+      </table>
+    </div></div>
+  </div>
+
+  <!-- CLIENTS -->
+  <div class="section" id="section-clients">
+    <div class="sec-head">
+      <h2>👥 Database Client</h2>
+      <div class="frow">
+        <input class="fi" placeholder="Cari..." oninput="filterCli()" id="cli-q" style="width:120px;">
+        <select class="fi" id="cli-ft" onchange="filterCli()"><option value="">Owner+Buyer</option><option>Owner</option><option>Buyer</option></select>
+        <select class="fi" id="cli-fs" onchange="filterCli()"><option value="">Status</option><option>Hot</option><option>Warm</option><option>Cold</option><option>New</option></select>
+      </div>
+    </div>
+    <div class="tbl-wrap"><div class="tbl-inner">
+      <table>
+        <thead><tr><th>Nama</th><th>Tipe</th><th>Area</th><th>Budget</th><th>Status</th><th>Kontak</th><th>Aksi</th></tr></thead>
+        <tbody id="cli-tbody"></tbody>
+      </table>
+    </div></div>
+  </div>
+
+  <!-- MATCHING -->
+  <div class="section" id="section-matching">
+    <div class="sec-head"><h2>⚡ AI Matching</h2><button class="btn btn-gold" onclick="runMatching()">🔄 Run Matching</button></div>
+    <div class="tbl-wrap" id="matching-results" style="padding:10px;">
+      <div style="text-align:center;padding:40px;color:var(--td)">Klik "Run Matching" untuk mencocokkan buyer dengan properti.</div>
+    </div>
+  </div>
+
+  <!-- FOLLOW-UP -->
+  <div class="section" id="section-followup">
+    <div class="sec-head">
+      <h2>📋 Follow-up Tracker</h2>
+      <div class="frow">
+        <select class="fi" id="fu-fs" onchange="filterFU()"><option value="">Status</option><option>New</option><option>Followed</option><option>Pending</option></select>
+        <select class="fi" id="fu-fc" onchange="filterFU()"><option value="">Kontak</option><option value="yes">✅ Dihubungi</option><option value="no">🔔 Belum</option></select>
+      </div>
+    </div>
+    <div class="tbl-wrap"><div class="tbl-inner">
+      <table>
+        <thead><tr><th>Properti</th><th>Area</th><th>Owner</th><th>Status Kontak</th><th>Follow-up</th><th>Tgl</th><th>Catatan</th><th>Aksi</th></tr></thead>
+        <tbody id="fu-tbody"></tbody>
+      </table>
+    </div></div>
+  </div>
+
+  <!-- PARSER -->
+  <div class="section" id="section-parser">
+    <div class="sec-head"><h2>📥 FB / WA Parser + OCR</h2></div>
+    <div style="padding:12px;overflow-y:auto;flex:1;">
+      <div class="fg">
+        <label class="fl">Tempel teks FB / WA / URL listing</label>
+        <textarea class="parea" id="parse-input" placeholder="'Jual villa di Seminyak 3 kamar harga 8M, hubungi Budi 08123456789'&#10;Atau paste URL postingan."></textarea>
+      </div>
+      <div style="display:flex;gap:7px;margin-bottom:10px;flex-wrap:wrap;">
+        <select class="fi" id="parse-type"><option value="auto">🤖 Auto</option><option value="Owner">Owner</option><option value="Buyer">Buyer</option></select>
+        <button class="btn btn-gold" onclick="parseWithAI()">🤖 Proses AI</button>
+        <button class="btn btn-ghost" onclick="clearParser()">✕ Clear</button>
+      </div>
+      <div class="pres" id="parse-result"></div>
+      <div style="margin-top:14px;">
+        <div class="fg">
+          <label class="fl">📷 Upload Foto (OCR nomor HP otomatis)</label>
+          <div class="media-zone" onclick="document.getElementById('ocr-file-input').click()" style="padding:12px;">
+            <div class="media-zone-inner" style="padding:0">
+              📷 Upload foto papan iklan / pengumuman untuk OCR nomor HP
+              <input type="file" id="ocr-file-input" accept="image/*" onchange="runOCROnFile(this)" style="display:none;">
+            </div>
+          </div>
+          <div id="ocr-standalone-result"></div>
+        </div>
+      </div>
+      <div style="padding:10px;background:var(--s2);border-radius:8px;font-size:11px;color:var(--td);margin-top:10px;">
+        <strong style="color:var(--gold-l)">💡 Tips:</strong> Paste teks listing FB/WA → AI ekstrak nama, area, harga, nomor. Upload foto papan iklan → AI OCR nomor HP otomatis.
+      </div>
+    </div>
+  </div>
+
+</div><!-- /center -->
+
+<!-- RIGHT PANEL -->
+<div id="rpanel">
+  <div class="rtabs">
+    <div class="rtab active" onclick="switchRPanel('ai')">🤖 AI</div>
+    <div class="rtab" onclick="switchRPanel('matches')">⚡</div>
+    <div class="rtab" onclick="switchRPanel('activity')">📅</div>
+  </div>
+  <div id="rp-ai" class="rpanel-content active" style="display:flex;flex-direction:column;padding:0;flex:1;overflow:hidden;">
+    <div id="chat-messages">
+      <div class="msg ai">Halo! Saya PropBot AI 🏠<br><br>Tanya saya:<br>• Analisa properti &amp; pasar Bali<br>• Draft WA ke client<br>• Rekomendasi harga listing<br>• Tips negosiasi &amp; closing<br>• Klik ⭐ AI Rekomendasi di sidebar untuk insight investasi terbaik</div>
+    </div>
+    <div class="chat-row">
+      <textarea id="chat-input" placeholder="Tanya PropBot..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>
+      <button class="btn btn-gold" onclick="sendChat()" style="padding:0 8px;height:34px;">→</button>
+    </div>
+  </div>
+  <div id="rp-matches" class="rpanel-content">
+    <div style="font-size:9px;letter-spacing:2px;color:var(--td);text-transform:uppercase;margin-bottom:8px;">Match Terbaru</div>
+    <div id="matches-list"><div style="color:var(--td);font-size:11.5px;text-align:center;padding:16px;">Run Matching dulu.</div></div>
+  </div>
+  <div id="rp-activity" class="rpanel-content">
+    <div style="font-size:9px;letter-spacing:2px;color:var(--td);text-transform:uppercase;margin-bottom:8px;">Log Aktivitas</div>
+    <div id="activity-list" style="font-size:11px;"></div>
+  </div>
+</div>
+
+</div><!-- /layout -->
+
+<!-- ====== MODALS ====== -->
+
+<!-- ADD/EDIT INVENTORY -->
+<div class="mbk" id="modal-add-inventory">
+<div class="modal modal-wide">
+  <h2 id="inv-modal-title">➕ Tambah Properti</h2>
+  <input type="hidden" id="inv-edit-id">
+  <div class="form-2">
+    <div class="fg"><label class="fl">Nama Properti *</label><input class="fi-full" id="inv-name" placeholder="Villa Sunset Seminyak"></div>
+    <div class="fg"><label class="fl">Tipe</label><select class="fi-full" id="inv-type"><option>Villa</option><option>Tanah</option><option>Rumah</option><option>Komersial</option><option>Apartemen</option></select></div>
+  </div>
+  <div class="form-2">
+    <div class="fg"><label class="fl">Area *</label><input class="fi-full" id="inv-area" placeholder="Seminyak, Bali"></div>
+    <div class="fg"><label class="fl">Harga (IDR)</label><input class="fi-full" id="inv-price" placeholder="8.000.000.000"></div>
+  </div>
+  <div class="form-3">
+    <div class="fg"><label class="fl">Kamar Tidur</label><input class="fi-full" id="inv-rooms" type="number" placeholder="3" min="0"></div>
+    <div class="fg"><label class="fl">Luas (m²)</label><input class="fi-full" id="inv-size" type="number" placeholder="500" min="0"></div>
+    <div class="fg"><label class="fl">Ketersediaan</label><input class="fi-full" id="inv-avail" placeholder="Jan–Jun 2025"></div>
+  </div>
+  <div class="form-2">
+    <div class="fg"><label class="fl">Nama Owner</label><input class="fi-full" id="inv-owner-name" placeholder="Pak Wayan"></div>
+    <div class="fg"><label class="fl">No. WA Owner</label><input class="fi-full" id="inv-owner-phone" placeholder="081234567890"></div>
+  </div>
+  <div class="fg"><label class="fl">Deskripsi</label><textarea class="fi-full" id="inv-desc" rows="2" placeholder="Villa mewah view sawah, pool private..."></textarea></div>
+  <div class="form-2">
+    <div class="fg"><label class="fl">Latitude (GPS)</label><input class="fi-full" id="inv-lat" placeholder="-8.690500"></div>
+    <div class="fg"><label class="fl">Longitude</label><input class="fi-full" id="inv-lng" placeholder="115.167700"></div>
+  </div>
+  <div style="display:flex;gap:7px;margin-bottom:12px;align-items:center;">
+    <button class="btn btn-outline btn-sm" onclick="getGPS()" id="gps-btn">🎯 GPS Saya</button>
+    <span id="gps-status" style="font-size:11px;color:var(--td)"></span>
+  </div>
+
+  <!-- MEDIA MULTI UPLOAD -->
+  <div class="fg">
+    <label class="fl">📷 Foto & Video (Galeri / Kamera / Langsung)</label>
+    <div class="media-src-btns">
+      <button class="btn btn-outline btn-sm" onclick="triggerMedia('gallery')">🖼️ Galeri</button>
+      <button class="btn btn-outline btn-sm" onclick="triggerMedia('camera')">📸 Kamera</button>
+      <button class="btn btn-teal btn-sm" onclick="triggerMedia('video')">🎥 Video</button>
+      <button class="btn btn-purple btn-sm" onclick="triggerMedia('ocr')">🔍 OCR Foto</button>
+    </div>
+    <input type="file" id="mi-gallery" multiple accept="image/*,video/*" onchange="addMedia(this,'gallery')" style="display:none;">
+    <input type="file" id="mi-camera" accept="image/*" capture="environment" onchange="addMedia(this,'camera')" style="display:none;">
+    <input type="file" id="mi-video" accept="video/*" capture="environment" onchange="addMedia(this,'video')" style="display:none;">
+    <input type="file" id="mi-ocr" accept="image/*" capture="environment" onchange="addMedia(this,'ocr')" style="display:none;">
+    <div class="media-grid" id="media-grid"></div>
+    <div id="ocr-result-box" style="display:none;"></div>
+    <input class="fi-full" id="inv-media-url" placeholder="URL foto Google Drive / Cloudinary (opsional)" style="margin-top:7px;font-size:11.5px;">
+  </div>
+
+  <div class="form-2">
+    <div class="fg"><label class="fl">Follow-up Status</label><select class="fi-full" id="inv-followup"><option>New</option><option>Followed</option><option>Pending</option></select></div>
+    <div class="fg"><label class="fl">Status Kontak</label><select class="fi-full" id="inv-contacted"><option value="no">🔔 Belum Dihubungi</option><option value="yes">✅ Sudah Dihubungi</option></select></div>
+  </div>
+  <div class="fg"><label class="fl">Shortlist untuk Client?</label><select class="fi-full" id="inv-shortlist"><option value="0">Tidak</option><option value="1">⭐ Ya, Shortlist</option></select></div>
+
+  <div class="mact">
+    <button class="btn btn-ghost" onclick="closeModal('add-inventory');resetInvForm()">Batal</button>
+    <button class="btn btn-gold" onclick="saveInventory()">💾 Simpan</button>
+  </div>
+</div>
+</div>
+
+<!-- ADD/EDIT CLIENT -->
+<div class="mbk" id="modal-add-client">
+<div class="modal">
+  <h2 id="cli-modal-title">➕ Tambah Client</h2>
+  <input type="hidden" id="cli-edit-id">
+  <div class="form-2">
+    <div class="fg"><label class="fl">Nama *</label><input class="fi-full" id="cli-name" placeholder="Budi Santoso"></div>
+    <div class="fg"><label class="fl">Tipe *</label><select class="fi-full" id="cli-type"><option>Buyer</option><option>Owner</option></select></div>
+  </div>
+  <div class="form-2">
+    <div class="fg"><label class="fl">No. WA *</label><input class="fi-full" id="cli-phone" placeholder="081234567890"></div>
+    <div class="fg"><label class="fl">Status</label><select class="fi-full" id="cli-status"><option>New</option><option>Hot</option><option>Warm</option><option>Cold</option><option>Closing</option></select></div>
+  </div>
+  <div class="form-2">
+    <div class="fg"><label class="fl">Area Dicari</label><input class="fi-full" id="cli-area" placeholder="Seminyak, Canggu"></div>
+    <div class="fg"><label class="fl">Budget (IDR)</label><input class="fi-full" id="cli-budget" placeholder="5.000.000.000"></div>
+  </div>
+  <div class="form-2">
+    <div class="fg"><label class="fl">Min Kamar</label><input class="fi-full" id="cli-rooms" type="number" placeholder="2" min="0"></div>
+    <div class="fg"><label class="fl">Butuh Kapan</label><input class="fi-full" id="cli-month" placeholder="Mei 2025"></div>
+  </div>
+  <div class="fg"><label class="fl">Catatan</label><textarea class="fi-full" id="cli-notes" rows="2" placeholder="Info tambahan..."></textarea></div>
+  <div class="mact">
+    <button class="btn btn-ghost" onclick="closeModal('add-client');resetCliForm()">Batal</button>
+    <button class="btn btn-gold" onclick="saveClient()">💾 Simpan</button>
+  </div>
+</div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="mbk" id="modal-detail">
+<div class="modal modal-wide">
+  <div id="detail-body"></div>
+  <div class="mact"><button class="btn btn-ghost" onclick="closeModal('detail')">Tutup</button></div>
+</div>
+</div>
+
+<!-- KML -->
+<div class="mbk" id="modal-kml">
+<div class="modal">
+  <h2>📁 Import Google Earth KML</h2>
+  <p style="font-size:12px;color:var(--td);margin-bottom:14px;">Import .kml/.kmz dari Google Earth — koordinat & foto geotagging otomatis masuk ke peta.</p>
+  <div class="kml-zone" onclick="document.getElementById('kml-file').click()">
+    📁 Klik atau drag .kml / .kmz di sini
+    <input type="file" id="kml-file" accept=".kml,.kmz" onchange="importKML(this)" style="display:none;">
+  </div>
+  <div id="kml-res" style="margin-top:10px;font-size:12px;color:var(--green);display:none;"></div>
+  <div class="mact"><button class="btn btn-ghost" onclick="closeModal('kml')">Tutup</button></div>
+</div>
+</div>
+
+<!-- AI REPLY/NARRATIVE -->
+<div class="mbk" id="modal-reply">
+<div class="modal">
+  <h2 id="reply-title">✨ AI Draft</h2>
+  <div id="reply-content" style="font-size:12.5px;line-height:1.75;background:var(--s2);border-radius:8px;padding:14px;border:1px solid var(--border);white-space:pre-line;max-height:55vh;overflow-y:auto;"></div>
+  <div class="mact">
+    <button class="btn btn-ghost" onclick="closeModal('reply')">Tutup</button>
+    <button class="btn btn-teal" onclick="copyReply()">📋 Copy</button>
+    <button class="btn btn-green" id="reply-wa-btn" onclick="sendViaWA()" style="display:none;">📱 WA</button>
+  </div>
+</div>
+</div>
+
+<!-- SHARE OVERLAY -->
+<div class="share-ov" id="share-overlay">
+  <div class="share-head">
+    <div>
+      <div class="share-title-txt">🏠 Katalog Properti Pilihan</div>
+      <div style="font-size:10.5px;color:var(--td)">Mode Klien — data internal tersembunyi</div>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+      <span id="share-count-txt" style="font-size:10.5px;color:var(--td)"></span>
+      <button class="btn btn-purple btn-sm" onclick="genSharePitch()">✨ AI Pitch</button>
+      <button class="btn btn-green btn-sm" onclick="shareViaWA()">📱 WA Multi-Prop</button>
+      <button class="btn btn-teal btn-sm" onclick="copyShareInfo()">🔗 Copy Info</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeShareMode()">✕</button>
+    </div>
+  </div>
+  <div class="share-body">
+    <div class="share-map-wrap"><div id="share-map"></div></div>
+    <div class="share-side">
+      <div style="font-size:9px;letter-spacing:2px;color:var(--td);text-transform:uppercase;margin-bottom:8px;">Properti Shortlist</div>
+      <div id="share-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div id="lightbox" onclick="closeLB()">
+  <button id="lb-close" onclick="closeLB()">✕</button>
+  <img id="lb-img" src="" alt="" style="display:none;">
+  <video id="lb-vid" controls style="display:none;max-width:90vw;max-height:90vh;border-radius:8px;"></video>
+</div>
+
+<div id="notif"></div>
+<script>
+// ====================== DATA ======================
+let DB = {
+  inventory: [
+    {id:1,name:"Villa Sunset Seminyak",type:"Villa",area:"Seminyak",price:8000000000,rooms:3,size:500,ownerName:"Pak Wayan",ownerPhone:"081234567890",desc:"Villa mewah pool & view sawah, 5 menit ke pantai Seminyak. Furnished lengkap.",lat:-8.6897,lng:115.1601,followup:"Followed",contacted:"yes",shortlisted:1,mediaFiles:[],mediaUrl:"",avail:"Jan-Jun 2025",createdAt:new Date().toISOString()},
+    {id:2,name:"Tanah Hook Canggu",type:"Tanah",area:"Canggu",price:3500000000,rooms:0,size:800,ownerName:"Bu Ketut",ownerPhone:"081298765432",desc:"Tanah hook pusat Canggu, akses 2 jalan, cocok villa boutique.",lat:-8.6488,lng:115.1395,followup:"New",contacted:"no",shortlisted:0,mediaFiles:[],mediaUrl:"",avail:"Open",createdAt:new Date().toISOString()},
+    {id:3,name:"Villa Riceview Ubud",type:"Villa",area:"Ubud",price:12000000000,rooms:5,size:1200,ownerName:"Mr. Johnson",ownerPhone:"081111222333",desc:"Estate mewah view sawah Ubud, private resort style, ideal investment.",lat:-8.5069,lng:115.2625,followup:"Pending",contacted:"no",shortlisted:1,mediaFiles:[],mediaUrl:"",avail:"Tersedia",createdAt:new Date().toISOString()},
+    {id:4,name:"Villa Beachside Sanur",type:"Villa",area:"Sanur",price:6500000000,rooms:4,size:600,ownerName:"Pak Made",ownerPhone:"082211223344",desc:"Villa 4 kamar beachfront Sanur, sunrise view, ideal sewa harian.",lat:-8.7059,lng:115.2617,followup:"Followed",contacted:"yes",shortlisted:0,mediaFiles:[],mediaUrl:"",avail:"Tersedia",createdAt:new Date().toISOString()}
+  ],
+  clients: [
+    {id:1,name:"Budi Santoso",type:"Buyer",phone:"081555666777",area:"Seminyak",budget:10000000000,rooms:3,status:"Hot",month:"Mei 2025",notes:"WNI, cari villa invest untuk sewa"},
+    {id:2,name:"Sarah Chen",type:"Buyer",phone:"081777888999",area:"Canggu",budget:5000000000,rooms:2,status:"Warm",month:"Jun 2025",notes:"Expat, ingin tinggal jangka panjang"},
+    {id:3,name:"Pak Surya",type:"Owner",phone:"081321654987",area:"Sanur",budget:0,rooms:0,status:"Warm",month:"",notes:"Punya 3 kavling di Sanur"},
+    {id:4,name:"Mia Tanaka",type:"Buyer",phone:"081444333222",area:"Ubud",budget:15000000000,rooms:5,status:"Hot",month:"Jul 2025",notes:"Japanese investor, cari private estate"}
+  ]
+};
+
+let matchesFound = [];
+let activityLog = [];
+let addPinMode = false;
+let map, shareMap;
+let mapLayers = {};
+let currentLayer = 'dark';
+let markers = [];
+let shareMarkers = [];
+let currentMediaFiles = [];
+let replyWAPhone = null;
+let lbImages = [];
+let lbIndex = 0;
+let notifT;
+
+// ====================== INIT ======================
+document.addEventListener('DOMContentLoaded', () => {
+  initMap();
+  renderAll();
+  logAct('PropAI GEO v7.0 dimuat','Sistem siap');
+});
+
+// ====================== MAP ======================
+function initMap() {
+  map = L.map('map',{zoomControl:true,attributionControl:false}).setView([-8.65,115.22],10);
+  mapLayers.dark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19});
+  mapLayers.street = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19});
+  mapLayers.satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:18});
+  mapLayers.dark.addTo(map);
+  map.on('click', e => {
+    if (!addPinMode) return;
+    document.getElementById('inv-lat').value = e.latlng.lat.toFixed(6);
+    document.getElementById('inv-lng').value = e.latlng.lng.toFixed(6);
+    openAddModal(e.latlng.lat, e.latlng.lng);
+    toggleAddPin();
+    notify('📍 Koordinat dipilih! Lengkapi data properti.');
+  });
+}
+
+function setLayer(type,btn) {
+  if(mapLayers[currentLayer]) map.removeLayer(mapLayers[currentLayer]);
+  mapLayers[type].addTo(map); currentLayer = type;
+  document.querySelectorAll('.lbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function renderMapMarkers() {
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
+  DB.inventory.forEach(prop => {
+    if (!prop.lat||!prop.lng) return;
+    const isSL = prop.shortlisted===1;
+    const color = isSL ? '#c9a96e' : prop.contacted==='yes' ? '#48b87a' : prop.followup==='Pending' ? '#f0a030' : '#9060d0';
+    const em = prop.type==='Tanah'?'🌿':prop.type==='Komersial'?'🏢':'🏠';
+    const icon = L.divIcon({
+      html:`<div style="position:relative"><div style="width:30px;height:30px;background:${color};border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid rgba(255,255,255,0.9);box-shadow:0 3px 12px rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;"><span style="transform:rotate(45deg);font-size:13px">${em}</span></div>${isSL?'<div style="position:absolute;top:-6px;right:-6px;font-size:12px">⭐</div>':''}</div>`,
+      className:'',iconSize:[30,30],iconAnchor:[15,30],popupAnchor:[0,-34]
+    });
+    const m = L.marker([prop.lat,prop.lng],{icon}).addTo(map);
+    m.bindPopup(buildPopup(prop),{maxWidth:270});
+    markers.push(m);
+  });
+}
+
+function buildPopup(p) {
+  const hasMedia = p.mediaFiles&&p.mediaFiles.length>0;
+  const thumb = hasMedia ? `<img src="${p.mediaFiles[0].dataUrl}" style="width:100%;height:88px;object-fit:cover;border-radius:6px 6px 0 0;margin-bottom:8px;">` :
+    p.mediaUrl ? `<img src="${p.mediaUrl}" style="width:100%;height:88px;object-fit:cover;border-radius:6px 6px 0 0;margin-bottom:8px;" onerror="this.style.display='none'">` : '';
+  return `<div style="font-family:'IBM Plex Sans',sans-serif;color:#e9e5dd;min-width:230px;border-radius:10px;overflow:hidden;">
+    ${thumb}
+    <div style="padding:10px;">
+      <div style="font-weight:600;color:#c9a96e;font-size:13px;margin-bottom:2px">${p.name}</div>
+      <div style="font-size:11px;color:#aaa;margin-bottom:6px">${p.area} · ${p.type}${p.rooms>0?' · '+p.rooms+' KT':''}</div>
+      <div style="font-size:14px;color:#e4ccaa;margin-bottom:6px">💰 ${fmtP(p.price)}</div>
+      <div style="font-size:10px;margin-bottom:8px">
+        <span style="color:${p.contacted==='yes'?'#48b87a':'#9060d0'}">${p.contacted==='yes'?'✅ Dihubungi':'🔔 Belum Dihubungi'}</span>
+        ${p.shortlisted?'<span style="color:#c9a96e;margin-left:6px">⭐ Shortlist</span>':''}
+        ${hasMedia?`<span style="color:#30b8a8;margin-left:6px">📷 ${p.mediaFiles.length}</span>`:''}
+      </div>
+      <div style="display:flex;gap:5px">
+        <button onclick="showDetail(${p.id})" style="flex:1;padding:5px;background:#c9a96e22;border:1px solid #c9a96e44;color:#c9a96e;border-radius:5px;cursor:pointer;font-size:11px">🔍 Detail</button>
+        <button onclick="waCall('${p.ownerPhone}','${p.ownerName||p.name}')" style="flex:1;padding:5px;background:#48b87a22;border:1px solid #48b87a44;color:#48b87a;border-radius:5px;cursor:pointer;font-size:11px">📱 WA</button>
+        <button onclick="toggleContacted(${p.id})" style="flex:1;padding:5px;background:#9060d022;border:1px solid #9060d044;color:#9060d0;border-radius:5px;cursor:pointer;font-size:11px">Toggle</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ====================== RENDER ======================
+function renderAll() {
+  updateStats();
+  renderInvTable();
+  renderCliTable();
+  renderFUTable();
+  renderMapMarkers();
+  updateSLBadge();
+}
+
+function updateStats() {
+  const c = DB.inventory.filter(p=>p.contacted==='yes').length;
+  const nc = DB.inventory.filter(p=>p.contacted!=='yes').length;
+  const sl = DB.inventory.filter(p=>p.shortlisted===1).length;
+  document.getElementById('stat-total').textContent = DB.inventory.length;
+  document.getElementById('stat-contacted').textContent = c;
+  document.getElementById('stat-notcontacted').textContent = nc;
+  document.getElementById('stat-shortlist').textContent = sl;
+  document.getElementById('stat-clients').textContent = DB.clients.length;
+  const cnt = {Hot:0,Warm:0,Cold:0,New:0};
+  DB.clients.forEach(c=>{if(cnt[c.status]!==undefined)cnt[c.status]++;});
+  ['hot','warm','cold','new'].forEach(k=>{const el=document.getElementById('p-'+k);if(el)el.textContent=cnt[k.charAt(0).toUpperCase()+k.slice(1)]||0;});
+  const areas=[...new Set(DB.inventory.map(p=>p.area))].sort();
+  const sel=document.getElementById('inv-fa');if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">Semua Area</option>'+areas.map(a=>`<option${a===cur?' selected':''}>${a}</option>`).join('');
+}
+
+function updateSLBadge() {
+  const n = DB.inventory.filter(p=>p.shortlisted===1).length;
+  document.getElementById('sl-badge').textContent = n+' Shortlist';
+  document.getElementById('stat-shortlist').textContent = n;
+}
+
+// ====================== INVENTORY TABLE ======================
+function renderInvTable(data) {
+  const tbody = document.getElementById('inv-tbody');
+  const list = data||DB.inventory;
+  if(!list.length){tbody.innerHTML='<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--td)">Belum ada properti</td></tr>';return;}
+  tbody.innerHTML = list.map(p=>`<tr>
+    <td><div style="font-weight:600;max-width:150px">${p.name}</div><div style="font-size:10px;color:var(--td)">${p.type}${p.size?' · '+p.size+'m²':''}</div>${p.mediaFiles&&p.mediaFiles.length?`<div style="font-size:10px;color:#30b8a8">📷 ${p.mediaFiles.length}</div>`:''}</td>
+    <td style="font-size:11.5px">${p.area}</td>
+    <td style="color:var(--gold);font-family:var(--f-display);font-size:13px">${fmtP(p.price)}</td>
+    <td style="font-size:11.5px">${p.rooms>0?p.rooms+' KT':'Land'}</td>
+    <td><span class="cbadge ${p.contacted==='yes'?'yes':'no'}" onclick="toggleContacted(${p.id})" title="Klik toggle">${p.contacted==='yes'?'✅ Dihubungi':'🔔 Belum'}</span></td>
+    <td><select style="background:var(--s2);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:3px 5px;font-size:10.5px" onchange="updFU(${p.id},this.value)"><option${p.followup==='New'?' selected':''}>New</option><option${p.followup==='Followed'?' selected':''}>Followed</option><option${p.followup==='Pending'?' selected':''}>Pending</option></select></td>
+    <td style="text-align:center;color:${(p.mediaFiles&&p.mediaFiles.length)||p.mediaUrl?'var(--teal)':'var(--td)'}">${p.mediaFiles&&p.mediaFiles.length?'📷'+p.mediaFiles.length:p.mediaUrl?'🔗':'—'}</td>
+    <td style="font-size:10px;color:${p.lat?'var(--green)':'var(--td)'}">${p.lat?p.lat.toFixed(4)+','+p.lng.toFixed(4):'—'}</td>
+    <td><label style="cursor:pointer;font-size:12px" title="Shortlist"><input type="checkbox" ${p.shortlisted?'checked':''} onchange="toggleSL(${p.id},this.checked)" style="accent-color:var(--gold)"> ⭐</label></td>
+    <td><div style="display:flex;gap:3px">
+      <button class="tact tact-d" onclick="showDetail(${p.id})" title="Detail">🔍</button>
+      <button class="tact tact-e" onclick="editInv(${p.id})" title="Edit">✏️</button>
+      <button class="tact tact-w" onclick="waCall('${p.ownerPhone}','${p.ownerName||p.name}')" title="WA">📱</button>
+      <button class="tact tact-ai" onclick="genNarrative(${p.id})" title="AI Narasi">✨</button>
+      <button class="tact tact-x" onclick="delInv(${p.id})" title="Hapus">🗑</button>
+    </div></td>
+  </tr>`).join('');
+}
+
+function renderCliTable(data) {
+  const tbody = document.getElementById('cli-tbody');
+  const list = data||DB.clients;
+  if(!list.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--td)">Belum ada client</td></tr>';return;}
+  tbody.innerHTML = list.map(c=>`<tr>
+    <td><strong>${c.name}</strong><br><span style="font-size:10px;color:var(--td)">${c.notes||''}</span></td>
+    <td><span class="pill ${c.type==='Owner'?'pill-owner':'pill-buyer'}">${c.type}</span></td>
+    <td style="font-size:11.5px">${c.area||'—'}</td>
+    <td style="color:var(--gold);font-family:var(--f-display);font-size:13px">${c.budget?fmtP(c.budget):'—'}</td>
+    <td><span class="pill pill-${(c.status||'new').toLowerCase()}">${c.status}</span></td>
+    <td style="font-size:11.5px">${c.phone||'—'}</td>
+    <td><div style="display:flex;gap:3px">
+      <button class="tact tact-w" onclick="waCall('${c.phone}','${c.name}')" title="WA">📱</button>
+      <button class="tact tact-d" onclick="magicReply(${c.id})" title="Magic Reply">✉️</button>
+      <button class="tact tact-e" onclick="editCli(${c.id})" title="Edit">✏️</button>
+      <button class="tact tact-x" onclick="delCli(${c.id})" title="Hapus">🗑</button>
+    </div></td>
+  </tr>`).join('');
+}
+
+function renderFUTable(data) {
+  const tbody = document.getElementById('fu-tbody');
+  const list = data||DB.inventory;
+  if(!list.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--td)">Belum ada data</td></tr>';return;}
+  tbody.innerHTML = list.map(p=>`<tr>
+    <td><strong>${p.name}</strong></td>
+    <td style="font-size:11.5px">${p.area}</td>
+    <td style="font-size:11.5px">${p.ownerName||'—'}</td>
+    <td><span class="cbadge ${p.contacted==='yes'?'yes':'no'}" onclick="toggleContacted(${p.id})" title="Klik toggle">${p.contacted==='yes'?'✅ Dihubungi':'🔔 Belum'}</span></td>
+    <td><select style="background:var(--s2);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:3px 5px;font-size:10.5px" onchange="updFU(${p.id},this.value)"><option${p.followup==='New'?' selected':''}>New</option><option${p.followup==='Followed'?' selected':''}>Followed</option><option${p.followup==='Pending'?' selected':''}>Pending</option></select></td>
+    <td style="font-size:10px;color:var(--td)">${new Date(p.createdAt||Date.now()).toLocaleDateString('id-ID')}</td>
+    <td style="font-size:10.5px;color:var(--td);max-width:120px">${p.desc?p.desc.substring(0,45)+'…':'—'}</td>
+    <td><div style="display:flex;gap:3px">
+      <button class="tact tact-w" onclick="waCall('${p.ownerPhone}','${p.ownerName||p.name}')">📱</button>
+      <button class="tact tact-e" onclick="editInv(${p.id})">✏️</button>
+    </div></td>
+  </tr>`).join('');
+}
+
+// ====================== FILTERS ======================
+function filterInv() {
+  const q=document.getElementById('inv-q').value.toLowerCase();
+  const fa=document.getElementById('inv-fa').value;
+  const ft=document.getElementById('inv-ft').value;
+  const fs=document.getElementById('inv-fs').value;
+  const fc=document.getElementById('inv-fc').value;
+  const fsl=document.getElementById('inv-fsl').value;
+  renderInvTable(DB.inventory.filter(p=>{
+    if(q&&!p.name.toLowerCase().includes(q)&&!p.area.toLowerCase().includes(q)&&!(p.ownerName||'').toLowerCase().includes(q))return false;
+    if(fa&&p.area!==fa)return false;
+    if(ft&&p.type!==ft)return false;
+    if(fs&&p.followup!==fs)return false;
+    if(fc&&p.contacted!==fc)return false;
+    if(fsl==='1'&&!p.shortlisted)return false;
+    return true;
+  }));
+}
+function filterCli() {
+  const q=document.getElementById('cli-q').value.toLowerCase();
+  const ft=document.getElementById('cli-ft').value;
+  const fs=document.getElementById('cli-fs').value;
+  renderCliTable(DB.clients.filter(c=>{
+    if(q&&!c.name.toLowerCase().includes(q)&&!(c.area||'').toLowerCase().includes(q))return false;
+    if(ft&&c.type!==ft)return false;
+    if(fs&&c.status!==fs)return false;
+    return true;
+  }));
+}
+function filterFU() {
+  const fs=document.getElementById('fu-fs').value;
+  const fc=document.getElementById('fu-fc').value;
+  renderFUTable(DB.inventory.filter(p=>{
+    if(fs&&p.followup!==fs)return false;
+    if(fc&&p.contacted!==fc)return false;
+    return true;
+  }));
+}
+
+// ====================== SAVE INVENTORY ======================
+function openAddModal(lat,lng) {
+  resetInvForm();
+  document.getElementById('inv-modal-title').textContent='➕ Tambah Properti';
+  document.getElementById('inv-edit-id').value='';
+  if(lat&&lng){document.getElementById('inv-lat').value=lat.toFixed(6);document.getElementById('inv-lng').value=lng.toFixed(6);}
+  openModal('add-inventory');
+}
+
+function editInv(id) {
+  const p=DB.inventory.find(x=>x.id===id);if(!p)return;
+  resetInvForm();
+  document.getElementById('inv-modal-title').textContent='✏️ Edit Properti';
+  document.getElementById('inv-edit-id').value=id;
+  document.getElementById('inv-name').value=p.name||'';
+  document.getElementById('inv-area').value=p.area||'';
+  document.getElementById('inv-price').value=p.price||'';
+  document.getElementById('inv-rooms').value=p.rooms||'';
+  document.getElementById('inv-size').value=p.size||'';
+  document.getElementById('inv-owner-name').value=p.ownerName||'';
+  document.getElementById('inv-owner-phone').value=p.ownerPhone||'';
+  document.getElementById('inv-desc').value=p.desc||'';
+  document.getElementById('inv-lat').value=p.lat||'';
+  document.getElementById('inv-lng').value=p.lng||'';
+  document.getElementById('inv-avail').value=p.avail||'';
+  document.getElementById('inv-type').value=p.type||'Villa';
+  document.getElementById('inv-followup').value=p.followup||'New';
+  document.getElementById('inv-contacted').value=p.contacted||'no';
+  document.getElementById('inv-shortlist').value=p.shortlisted?'1':'0';
+  document.getElementById('inv-media-url').value=p.mediaUrl||'';
+  currentMediaFiles=[...(p.mediaFiles||[])];
+  rebuildMediaGrid();
+  openModal('add-inventory');
+}
+
+function saveInventory() {
+  const name=document.getElementById('inv-name').value.trim();
+  const area=document.getElementById('inv-area').value.trim();
+  if(!name||!area){notify('⚠️ Nama dan Area wajib!','warn');return;}
+  const eid=parseInt(document.getElementById('inv-edit-id').value)||null;
+  const d={
+    name,type:document.getElementById('inv-type').value,area,
+    price:parsePrice(document.getElementById('inv-price').value),
+    rooms:parseInt(document.getElementById('inv-rooms').value)||0,
+    size:parseInt(document.getElementById('inv-size').value)||0,
+    ownerName:document.getElementById('inv-owner-name').value.trim(),
+    ownerPhone:document.getElementById('inv-owner-phone').value.trim(),
+    desc:document.getElementById('inv-desc').value.trim(),
+    lat:parseFloat(document.getElementById('inv-lat').value)||null,
+    lng:parseFloat(document.getElementById('inv-lng').value)||null,
+    avail:document.getElementById('inv-avail').value.trim(),
+    followup:document.getElementById('inv-followup').value,
+    contacted:document.getElementById('inv-contacted').value,
+    shortlisted:parseInt(document.getElementById('inv-shortlist').value)||0,
+    mediaFiles:[...currentMediaFiles],
+    mediaUrl:document.getElementById('inv-media-url').value.trim()
+  };
+  if(eid){
+    const i=DB.inventory.findIndex(p=>p.id===eid);
+    if(i!==-1){DB.inventory[i]={...DB.inventory[i],...d};logAct('Properti diupdate',name);}
+    notify('✅ Properti diupdate!');
+  } else {
+    d.id=Date.now();d.createdAt=new Date().toISOString();
+    DB.inventory.push(d);autoMatch(d);logAct('Properti ditambah',name+' — '+area);
+    notify('✅ Properti ditambah!');
+  }
+  closeModal('add-inventory');resetInvForm();renderAll();
+}
+
+function resetInvForm() {
+  ['inv-name','inv-area','inv-price','inv-rooms','inv-size','inv-owner-name','inv-owner-phone','inv-desc','inv-lat','inv-lng','inv-avail','inv-media-url'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('inv-type').value='Villa';
+  document.getElementById('inv-followup').value='New';
+  document.getElementById('inv-contacted').value='no';
+  document.getElementById('inv-shortlist').value='0';
+  document.getElementById('inv-edit-id').value='';
+  const gs=document.getElementById('gps-status');if(gs)gs.textContent='';
+  const gb=document.getElementById('gps-btn');if(gb)gb.textContent='🎯 GPS Saya';
+  currentMediaFiles=[];rebuildMediaGrid();
+  document.getElementById('ocr-result-box').style.display='none';
+  document.getElementById('ocr-result-box').innerHTML='';
+}
+
+// ====================== SAVE CLIENT ======================
+function editCli(id) {
+  const c=DB.clients.find(x=>x.id===id);if(!c)return;
+  document.getElementById('cli-modal-title').textContent='✏️ Edit Client';
+  document.getElementById('cli-edit-id').value=id;
+  document.getElementById('cli-name').value=c.name||'';
+  document.getElementById('cli-type').value=c.type||'Buyer';
+  document.getElementById('cli-phone').value=c.phone||'';
+  document.getElementById('cli-status').value=c.status||'New';
+  document.getElementById('cli-area').value=c.area||'';
+  document.getElementById('cli-budget').value=c.budget||'';
+  document.getElementById('cli-rooms').value=c.rooms||'';
+  document.getElementById('cli-month').value=c.month||'';
+  document.getElementById('cli-notes').value=c.notes||'';
+  openModal('add-client');
+}
+
+function saveClient() {
+  const name=document.getElementById('cli-name').value.trim();
+  if(!name){notify('⚠️ Nama wajib!','warn');return;}
+  const eid=parseInt(document.getElementById('cli-edit-id').value)||null;
+  const d={name,type:document.getElementById('cli-type').value,phone:document.getElementById('cli-phone').value.trim(),
+    area:document.getElementById('cli-area').value.trim(),budget:parsePrice(document.getElementById('cli-budget').value),
+    rooms:parseInt(document.getElementById('cli-rooms').value)||0,status:document.getElementById('cli-status').value,
+    month:document.getElementById('cli-month').value.trim(),notes:document.getElementById('cli-notes').value.trim()};
+  if(eid){const i=DB.clients.findIndex(c=>c.id===eid);if(i!==-1)DB.clients[i]={...DB.clients[i],...d};notify('✅ Client diupdate!');logAct('Client diupdate',name);}
+  else{d.id=Date.now();DB.clients.push(d);if(d.type==='Buyer')autoMatchBuyer(d);logAct('Client ditambah',name);notify('✅ Client ditambah!');}
+  closeModal('add-client');resetCliForm();renderAll();
+}
+
+function resetCliForm() {
+  ['cli-name','cli-phone','cli-area','cli-budget','cli-rooms','cli-month','cli-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('cli-type').value='Buyer';document.getElementById('cli-status').value='New';
+  document.getElementById('cli-edit-id').value='';document.getElementById('cli-modal-title').textContent='➕ Tambah Client';
+}
+
+// ====================== TOGGLES ======================
+function toggleContacted(id) {
+  const p=DB.inventory.find(x=>x.id===id);if(!p)return;
+  p.contacted=p.contacted==='yes'?'no':'yes';
+  renderAll();logAct('Status kontak',p.name+' → '+(p.contacted==='yes'?'Dihubungi':'Belum'));
+  notify(p.contacted==='yes'?'✅ Tandai sudah dihubungi':'🔔 Tandai belum dihubungi');
+}
+function toggleSL(id,checked) {
+  const p=DB.inventory.find(x=>x.id===id);if(!p)return;
+  p.shortlisted=checked?1:0;updateStats();renderMapMarkers();updateSLBadge();
+  notify(checked?'⭐ Ditambah shortlist':'Dihapus dari shortlist');
+}
+function updFU(id,val) {
+  const p=DB.inventory.find(x=>x.id===id);if(!p)return;
+  p.followup=val;renderMapMarkers();logAct('Follow-up',p.name+' → '+val);
+}
+function delInv(id) {
+  if(!confirm('Hapus properti ini?'))return;
+  const p=DB.inventory.find(x=>x.id===id);
+  DB.inventory=DB.inventory.filter(x=>x.id!==id);renderAll();
+  logAct('Properti dihapus',p?p.name:id);notify('🗑 Properti dihapus');
+}
+function delCli(id) {
+  if(!confirm('Hapus client ini?'))return;
+  const c=DB.clients.find(x=>x.id===id);
+  DB.clients=DB.clients.filter(x=>x.id!==id);renderAll();
+  logAct('Client dihapus',c?c.name:id);notify('🗑 Client dihapus');
+}
+
+// ====================== MEDIA ======================
+function triggerMedia(src) {
+  if(src==='gallery')document.getElementById('mi-gallery').click();
+  else if(src==='camera')document.getElementById('mi-camera').click();
+  else if(src==='video')document.getElementById('mi-video').click();
+  else if(src==='ocr')document.getElementById('mi-ocr').click();
+}
+
+function addMedia(input,source) {
+  const files=Array.from(input.files);
+  let done=0;
+  files.forEach(file=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const entry={dataUrl:e.target.result,type:file.type.startsWith('video/')?'video':'image',name:file.name,size:file.size};
+      currentMediaFiles.push(entry);
+      done++;
+      if(done===files.length)rebuildMediaGrid();
+      if(source==='ocr'||source==='camera'){
+        runOCR(entry.dataUrl, entry, result=>{
+          const box=document.getElementById('ocr-result-box');
+          box.style.display='block';
+          if(result.phone){
+            box.innerHTML=`<div class="ocr-result"><div class="ai-insight-title">🔍 OCR Result — Nomor HP Terdeteksi</div><div class="ocr-phone">📱 ${result.phone}</div><div style="margin-top:6px;font-size:11.5px;">${result.description||''}</div><div style="display:flex;gap:6px;margin-top:8px;"><button class="btn btn-teal btn-sm" onclick="document.getElementById('inv-owner-phone').value='${result.phone}';notify('📱 Nomor HP diisi otomatis!')">✅ Pakai Nomor Ini</button><button class="btn btn-ghost btn-sm" onclick="document.getElementById('ocr-result-box').style.display='none'">✕</button></div></div>`;
+          } else {
+            box.innerHTML=`<div class="ocr-result"><div class="ai-insight-title">🔍 AI Image Insight</div><div style="font-size:12px;line-height:1.6">${result.description||'Tidak ada nomor HP terdeteksi.'}</div></div>`;
+          }
+        });
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value='';
+}
+
+function rebuildMediaGrid() {
+  const grid=document.getElementById('media-grid');
+  if(!grid)return;
+  grid.innerHTML='';
+  currentMediaFiles.forEach((m,i)=>{
+    const wrap=document.createElement('div');
+    wrap.className='mthumb'+(m.type==='video'?' mthumb-vid':'');
+    if(m.type==='video'){wrap.innerHTML='🎥';wrap.title=m.name||'Video';}
+    else{
+      const img=document.createElement('img');img.src=m.dataUrl;wrap.appendChild(img);
+      wrap.onclick=()=>openLB([m.dataUrl],0);wrap.style.cursor='pointer';
+      const ocrBtn=document.createElement('button');ocrBtn.className='mocr';ocrBtn.textContent='OCR';
+      ocrBtn.onclick=e=>{e.stopPropagation();runOCR(m.dataUrl,m,r=>{
+        const box=document.getElementById('ocr-result-box');box.style.display='block';
+        box.innerHTML=r.phone?`<div class="ocr-result"><div class="ai-insight-title">🔍 OCR Terdeteksi</div><div class="ocr-phone">📱 ${r.phone}</div><button class="btn btn-teal btn-sm" style="margin-top:6px" onclick="document.getElementById('inv-owner-phone').value='${r.phone}';notify('📱 Nomor diisi!')">✅ Pakai</button></div>`
+          :`<div class="ocr-result"><div style="font-size:11.5px">${r.description||'Tidak ada nomor.'}</div></div>`;
+      });};
+      wrap.appendChild(ocrBtn);
+    }
+    const mx=document.createElement('button');mx.className='mx';mx.textContent='✕';
+    mx.onclick=e=>{e.stopPropagation();currentMediaFiles.splice(i,1);rebuildMediaGrid();};
+    wrap.appendChild(mx);
+    grid.appendChild(wrap);
+  });
+}
+
+// ====================== OCR via Claude Vision ======================
+async function runOCR(dataUrl,mediaEntry,callback) {
+  notify('🔍 AI menganalisa foto...','info');
+  try {
+    const base64=dataUrl.split(',')[1];
+    const mediaType=dataUrl.startsWith('data:image/png')?'image/png':dataUrl.startsWith('data:image/gif')?'image/gif':'image/jpeg';
+    const prompt=`Analisa gambar ini. Lakukan dua hal:
+1. Ekstrak semua nomor telepon/HP yang terlihat (format Indonesia: 08xx, 62xx, +62xx)
+2. Analisa fitur properti menarik jika ini foto properti (view, fasilitas, kondisi bangunan, lokasi)
+
+Kembalikan JSON:
+{"phone":"nomor HP pertama yang ditemukan atau null","allPhones":["semua nomor"],"description":"deskripsi singkat insight foto properti","propertyFeatures":["fitur1","fitur2"]}
+
+Hanya JSON, tanpa teks lain.`;
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:mediaType,data:base64}},{type:'text',text:prompt}]}]})
+    });
+    const data=await res.json();
+    const raw=data.content?.[0]?.text||'{}';
+    const parsed=JSON.parse(raw.replace(/```json|```/g,'').trim());
+    if(mediaEntry)mediaEntry.ocrResult=parsed;
+    callback(parsed);
+  } catch(e) {
+    callback({phone:null,description:'Gagal menganalisa gambar. Coba lagi.'});
+  }
+}
+
+// Standalone OCR for parser page
+function runOCROnFile(input) {
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const res=document.getElementById('ocr-standalone-result');
+    res.innerHTML='<div style="color:var(--td);font-size:11.5px;padding:10px">⏳ AI menganalisa foto...</div>';
+    runOCR(e.target.result,null,r=>{
+      res.innerHTML=`<div class="ocr-result">
+        <div class="ai-insight-title">🔍 Hasil OCR & AI Image Insight</div>
+        ${r.phone?`<div class="ocr-phone">📱 ${r.phone}</div>${r.allPhones&&r.allPhones.length>1?`<div style="font-size:11px;color:var(--td);margin-top:4px">Semua: ${r.allPhones.join(', ')}</div>`:''}
+        <div style="display:flex;gap:6px;margin-top:8px">
+          <button class="btn btn-teal btn-sm" onclick="document.getElementById('inv-owner-phone').value='${r.phone}';notify('📱 Nomor disalin!')">✅ Copy ke Form</button>
+          <button class="btn btn-green btn-sm" onclick="waCall('${r.phone}','Owner')">📱 WA Langsung</button>
+        </div>`:'<div style="color:var(--td);font-size:11.5px">Tidak ada nomor HP terdeteksi.</div>'}
+        ${r.description?`<div style="margin-top:8px;font-size:12px;line-height:1.6;border-top:1px solid var(--border);padding-top:8px">${r.description}</div>`:''}
+        ${r.propertyFeatures&&r.propertyFeatures.length?`<div style="margin-top:6px;font-size:11px;color:var(--teal)">🏠 Fitur: ${r.propertyFeatures.join(' · ')}</div>`:''}
+      </div>`;
+    });
+  };
+  reader.readAsDataURL(file);
+  input.value='';
+}
+
+// ====================== LIGHTBOX ======================
+function openLB(images,idx) {
+  lbImages=images;lbIndex=idx;
+  const lb=document.getElementById('lightbox');
+  const img=document.getElementById('lb-img');
+  const vid=document.getElementById('lb-vid');
+  const src=images[idx];
+  if(src&&src.includes('video/')){img.style.display='none';vid.style.display='block';vid.src=src;}
+  else{vid.style.display='none';img.style.display='block';img.src=src;}
+  lb.classList.add('open');
+}
+function closeLB() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.getElementById('lb-vid').pause&&document.getElementById('lb-vid').pause();
+}
+
+// ====================== GPS ======================
+function getGPS() {
+  const btn=document.getElementById('gps-btn');const st=document.getElementById('gps-status');
+  btn.textContent='⏳ Lokasi...';st.textContent='Meminta GPS...';
+  if(!navigator.geolocation){st.textContent='⚠️ GPS tidak tersedia';return;}
+  navigator.geolocation.getCurrentPosition(
+    pos=>{
+      document.getElementById('inv-lat').value=pos.coords.latitude.toFixed(6);
+      document.getElementById('inv-lng').value=pos.coords.longitude.toFixed(6);
+      btn.textContent='✅ Didapat';st.style.color='var(--green)';st.textContent=`±${Math.round(pos.coords.accuracy)}m`;
+      map.setView([pos.coords.latitude,pos.coords.longitude],16);notify('🎯 GPS berhasil!');
+    },
+    ()=>{btn.textContent='❌ Gagal';st.textContent='Aktifkan GPS';st.style.color='var(--red)';}
+  );
+}
+
+function toggleAddPin() {
+  addPinMode=!addPinMode;
+  const btn=document.getElementById('add-pin-btn');
+  if(addPinMode){btn.textContent='✕ Batal';btn.classList.add('pin-active');map.getContainer().style.cursor='crosshair';switchSection('map');notify('📍 Klik lokasi di peta!');}
+  else{btn.textContent='📍 Pin';btn.classList.remove('pin-active');map.getContainer().style.cursor='';}
+}
+
+// ====================== DETAIL ======================
+function showDetail(propId) {
+  const p=DB.inventory.find(x=>x.id===propId);if(!p)return;
+  const hasMedia=p.mediaFiles&&p.mediaFiles.length>0;
+  const mediaHTML = hasMedia
+    ? `<div class="media-scroll">${p.mediaFiles.map((m,i)=>m.type==='video'
+        ?`<div style="width:90px;height:65px;background:var(--s3);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;border:1px solid var(--border)">🎥</div>`
+        :`<img class="media-scroll-thumb" src="${m.dataUrl}" onclick="openLB(${JSON.stringify(p.mediaFiles.filter(x=>x.type==='image').map(x=>x.dataUrl))},${i})" alt="">`).join('')}</div>`
+    : p.mediaUrl
+    ? `<img src="${p.mediaUrl}" style="width:100%;height:150px;object-fit:cover;border-radius:8px;margin-bottom:10px" onerror="this.style.display='none'">`
+    : `<div style="text-align:center;font-size:52px;padding:16px;background:var(--s2);border-radius:8px;margin-bottom:10px">🏠</div>`;
+  document.getElementById('detail-body').innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px">
+      <div><h2 style="font-family:var(--f-display);font-size:19px;color:var(--gold)">${p.name}</h2>
+        <span class="cbadge ${p.contacted==='yes'?'yes':'no'}" onclick="toggleContacted(${p.id});renderAll()" style="margin-top:5px;display:inline-flex">${p.contacted==='yes'?'✅ Dihubungi':'🔔 Belum Dihubungi'}</span>
+        ${p.shortlisted?'<span style="color:var(--gold);font-size:12px;margin-left:6px">⭐ Shortlist</span>':''}
+      </div>
+    </div>
+    ${mediaHTML}
+    <div class="det-grid">
+      <div class="det-item"><div class="lbl">Tipe</div><div class="val">${p.type}</div></div>
+      <div class="det-item"><div class="lbl">Area</div><div class="val">${p.area}</div></div>
+      <div class="det-item"><div class="lbl">Harga</div><div class="val">${fmtP(p.price)}</div></div>
+      <div class="det-item"><div class="lbl">Kamar</div><div class="val">${p.rooms>0?p.rooms+' KT':'Land'}</div></div>
+      <div class="det-item"><div class="lbl">Luas</div><div class="val">${p.size?p.size+'m²':'—'}</div></div>
+      <div class="det-item"><div class="lbl">Ketersediaan</div><div class="val">${p.avail||'—'}</div></div>
+    </div>
+    <div style="padding:10px;background:var(--s2);border-radius:8px;font-size:12px;line-height:1.65;margin:8px 0">${p.desc||'Tidak ada deskripsi.'}</div>
+    <div style="padding:10px;background:var(--s2);border-radius:8px;font-size:12px;margin:4px 0">
+      <strong style="color:var(--td)">Owner:</strong> ${p.ownerName||'—'} · ${p.ownerPhone||'—'}<br>
+      <strong style="color:var(--td)">GPS:</strong> ${p.lat?p.lat.toFixed(6)+', '+p.lng.toFixed(6):'—'}<br>
+      <strong style="color:var(--td)">Follow-up:</strong> ${p.followup} · <strong style="color:var(--td)">Input:</strong> ${new Date(p.createdAt||Date.now()).toLocaleDateString('id-ID')}
+    </div>
+    <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+      ${p.lat?`<button onclick="window.open('https://www.google.com/maps?q=${p.lat},${p.lng}','_blank')" class="btn btn-outline" style="flex:1;justify-content:center">🗺️ Maps</button>`:''}
+      <button onclick="editInv(${p.id});closeModal('detail')" class="btn btn-blue" style="flex:1;justify-content:center">✏️ Edit</button>
+      <button onclick="waCall('${p.ownerPhone}','${p.ownerName||p.name}')" class="btn btn-green" style="flex:1;justify-content:center">📱 WA Owner</button>
+      <button onclick="genNarrative(${p.id})" class="btn btn-gold" style="flex:1;justify-content:center">✨ AI Narasi</button>
+    </div>`;
+  openModal('detail');
+}
+
+// ====================== MATCHING ======================
+function autoMatch(newProp) {
+  DB.clients.filter(c=>c.type==='Buyer').forEach(b=>{
+    const am=b.area&&newProp.area&&(newProp.area.toLowerCase().includes(b.area.toLowerCase())||b.area.toLowerCase().includes(newProp.area.toLowerCase()));
+    const bm=!b.budget||newProp.price<=b.budget*1.1;
+    if(am&&bm){matchesFound.push({prop:newProp,buyer:b,score:(am?40:0)+(bm?35:0)+(!b.rooms||newProp.rooms>=b.rooms?25:0)});updMatchPanel();}
+  });updateStats();
+}
+function autoMatchBuyer(nb) {
+  DB.inventory.forEach(p=>{
+    const am=nb.area&&p.area&&(p.area.toLowerCase().includes(nb.area.toLowerCase())||nb.area.toLowerCase().includes(p.area.toLowerCase()));
+    const bm=!nb.budget||p.price<=nb.budget*1.1;
+    if(am&&bm){matchesFound.push({prop:p,buyer:nb,score:80});updMatchPanel();}
+  });updateStats();
+}
+
+function runMatching() {
+  matchesFound=[];
+  DB.inventory.forEach(p=>{
+    DB.clients.filter(c=>c.type==='Buyer').forEach(b=>{
+      const am=b.area&&p.area&&(p.area.toLowerCase().includes(b.area.toLowerCase())||b.area.toLowerCase().includes(p.area.toLowerCase()));
+      const bm=!b.budget||p.price<=b.budget*1.1;
+      const rm=!b.rooms||p.rooms>=b.rooms;
+      const score=(am?40:0)+(bm?35:0)+(rm?25:0);
+      if(score>=40)matchesFound.push({prop:p,buyer:b,score});
+    });
+  });
+  matchesFound.sort((a,b)=>b.score-a.score);
+  const seen=new Set(),dd=[];
+  matchesFound.forEach(m=>{const k=m.prop.id+'-'+m.buyer.id;if(!seen.has(k)){seen.add(k);dd.push(m);}});
+  matchesFound=dd;updMatchPanel();updateStats();
+  const el=document.getElementById('matching-results');
+  if(!matchesFound.length){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--td)">Tidak ada match.</div>';return;}
+  el.innerHTML=`<div style="padding:10px;font-size:12px;color:var(--td)"><strong style="color:var(--gold)">${matchesFound.length} match</strong></div>`+
+    matchesFound.map(m=>`<div class="mcard ${m.score>=75?'top':''}" style="margin:6px 12px">
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:5px">
+        <div><div style="font-weight:600;color:var(--gold-l);font-size:12px">${m.prop.name}</div><div style="font-size:10.5px;color:var(--td)">${m.prop.area} · ${fmtP(m.prop.price)}</div></div>
+        <span class="mbadge">Score: ${m.score}%</span>
+      </div>
+      <div style="font-size:10.5px;color:var(--td);margin-bottom:7px">→ <strong style="color:var(--text)">${m.buyer.name}</strong> (Budget: ${fmtP(m.buyer.budget)})</div>
+      <div style="display:flex;gap:5px">
+        <button onclick="waSendToClient('${m.buyer.phone}','${m.prop.name}','${m.prop.area}',${m.prop.price})" style="flex:1;padding:5px;background:rgba(72,184,122,0.13);border:1px solid rgba(72,184,122,0.28);color:var(--green);border-radius:5px;cursor:pointer;font-size:11px">📱 Kirim</button>
+        <button onclick="genNarrative(${m.prop.id})" style="flex:1;padding:5px;background:var(--gold-dim);border:1px solid var(--border);color:var(--gold);border-radius:5px;cursor:pointer;font-size:11px">✨ Narasi</button>
+      </div>
+    </div>`).join('');
+}
+
+function updMatchPanel() {
+  const el=document.getElementById('matches-list');
+  if(!matchesFound.length){el.innerHTML='<div style="color:var(--td);font-size:11.5px;text-align:center;padding:14px">Belum ada match.</div>';return;}
+  el.innerHTML=matchesFound.slice(0,5).map(m=>`<div class="mcard" style="margin-bottom:6px">
+    <div style="font-size:11px;font-weight:600;color:var(--gold-l)">${m.prop.name}</div>
+    <div style="font-size:10.5px;color:var(--td);margin:2px 0">→ ${m.buyer.name} · ${m.score}%</div>
+    <button onclick="waSendToClient('${m.buyer.phone}','${m.prop.name}','${m.prop.area}',${m.prop.price})" style="width:100%;margin-top:5px;padding:4px;background:rgba(72,184,122,0.13);border:1px solid rgba(72,184,122,0.28);color:var(--green);border-radius:5px;cursor:pointer;font-size:10.5px">📱 Bagikan</button>
+  </div>`).join('');
+}
+
+// ====================== AI FUNCTIONS ======================
+async function sendChat() {
+  const inp=document.getElementById('chat-input');const msg=inp.value.trim();if(!msg)return;
+  appendMsg(msg,'user');inp.value='';
+  const ld=appendMsg('','ai loading');
+  ld.innerHTML='<div class="ai-loading"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div></div>';
+  const ctx=`Kamu PropBot AI, asisten broker properti Bali. Database: ${DB.inventory.length} properti (${[...new Set(DB.inventory.map(p=>p.area))].join(', ')}), ${DB.clients.length} client, ${matchesFound.length} match. Jawab Bahasa Indonesia, singkat & profesional.
+Data: ${JSON.stringify(DB.inventory.map(p=>({nama:p.name,area:p.area,harga:p.price,kamar:p.rooms,contacted:p.contacted,followup:p.followup,shortlisted:p.shortlisted})))}`;
+  try {
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,system:ctx,messages:[{role:'user',content:msg}]})});
+    const data=await res.json();ld.remove();
+    appendMsg(data.content?.[0]?.text||'Maaf, ada gangguan.','ai');
+  }catch(e){ld.remove();appendMsg('⚠️ Koneksi AI gagal.','ai');}
+}
+
+function appendMsg(text,cls) {
+  const div=document.createElement('div');div.className='msg '+cls;div.textContent=text;
+  const c=document.getElementById('chat-messages');c.appendChild(div);c.scrollTop=c.scrollHeight;return div;
+}
+
+async function genNarrative(propId) {
+  const p=DB.inventory.find(x=>x.id===propId);if(!p)return;
+  replyWAPhone=p.ownerPhone;
+  document.getElementById('reply-title').textContent='✨ AI Narasi Pemasaran';
+  document.getElementById('reply-wa-btn').style.display='inline-flex';
+  document.getElementById('reply-content').innerHTML='<div class="ai-loading" style="padding:10px"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div></div>';
+  openModal('reply');
+  const mediaDesc=p.mediaFiles&&p.mediaFiles.length>0?`(${p.mediaFiles.length} foto tersedia)`:'';
+  const prompt=`Buat narasi pemasaran WhatsApp (max 200 kata, mewah & persuasif) untuk broker properti Bali. Sertakan aksesibilitas ke pantai, restoran, pusat belanja, dan fasilitas publik terdekat. Bahasa Indonesia profesional & emosional.
+
+Properti: ${p.name} ${mediaDesc}
+Tipe: ${p.type} | Area: ${p.area}, Bali
+Harga: ${fmtP(p.price)} | Kamar: ${p.rooms>0?p.rooms:'Tanah'}
+Luas: ${p.size||'—'}m² | Tersedia: ${p.avail||'—'}
+Deskripsi: ${p.desc}
+
+Format: Langsung narasi, buka dengan hook kuat.`;
+  try {
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,messages:[{role:'user',content:prompt}]})});
+    const data=await res.json();
+    document.getElementById('reply-content').textContent=data.content?.[0]?.text||'Gagal.';
+  }catch(e){document.getElementById('reply-content').textContent='⚠️ Gagal. Coba lagi.';}
+}
+
+async function magicReply(clientId) {
+  const c=DB.clients.find(x=>x.id===clientId);if(!c)return;
+  replyWAPhone=c.phone;
+  document.getElementById('reply-title').textContent='✉️ Magic Reply untuk '+c.name;
+  document.getElementById('reply-wa-btn').style.display='inline-flex';
+  document.getElementById('reply-content').innerHTML='<div class="ai-loading" style="padding:10px"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div></div>';
+  openModal('reply');
+  const matches=DB.inventory.filter(p=>p.area&&c.area&&(p.area.toLowerCase().includes(c.area.toLowerCase())||c.area.toLowerCase().includes(p.area.toLowerCase()))).slice(0,2);
+  const prompt=`Draft pesan WhatsApp broker properti ke klien. Ramah, profesional, Bahasa Indonesia. Max 120 kata.
+Klien: ${c.name} (${c.type}) | Cari: ${c.area}, budget ${fmtP(c.budget)}, ${c.rooms} KT
+Catatan: ${c.notes}
+${matches.length?'Cocok: '+matches.map(p=>p.name+' '+fmtP(p.price)).join(', '):''}
+Langsung teks pesan saja, tanpa header.`;
+  try {
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,messages:[{role:'user',content:prompt}]})});
+    const data=await res.json();
+    document.getElementById('reply-content').textContent=data.content?.[0]?.text||'';
+  }catch(e){document.getElementById('reply-content').textContent='⚠️ Gagal.';}
+}
+
+async function runAIRecommendation() {
+  document.getElementById('reply-title').textContent='⭐ AI Rekomendasi Investasi Terbaik';
+  document.getElementById('reply-wa-btn').style.display='none';
+  document.getElementById('reply-content').innerHTML='<div class="ai-loading" style="padding:10px"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div></div>';
+  openModal('reply');
+  const prompt=`Kamu analis properti Bali expert. Analisa database properti ini dan berikan rekomendasi investasi terbaik 2025. Format jawaban dalam Bahasa Indonesia profesional.
+
+Database properti:
+${JSON.stringify(DB.inventory.map(p=>({nama:p.name,tipe:p.type,area:p.area,harga:p.price,kamar:p.rooms,luas:p.size,tersedia:p.avail,deskripsi:p.desc})))}
+
+Berikan:
+1. TOP 3 properti terbaik untuk investasi dengan alasan spesifik
+2. Proyeksi ROI dan potensi sewa per tahun  
+3. Tips negosiasi untuk masing-masing properti
+4. Warning/risiko yang perlu diperhatikan`;
+  try {
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:900,messages:[{role:'user',content:prompt}]})});
+    const data=await res.json();
+    document.getElementById('reply-content').textContent=data.content?.[0]?.text||'Gagal.';
+  }catch(e){document.getElementById('reply-content').textContent='⚠️ Gagal. Coba lagi.';}
+}
+
+async function genSharePitch() {
+  const sl=DB.inventory.filter(p=>p.shortlisted===1);
+  const list=sl.length>0?sl:DB.inventory;
+  document.getElementById('reply-title').textContent='✨ AI Pitch Katalog untuk Client';
+  document.getElementById('reply-wa-btn').style.display='none';
+  document.getElementById('reply-content').innerHTML='<div class="ai-loading" style="padding:10px"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div></div>';
+  openModal('reply');
+  const prompt=`Buat teks pemasaran WhatsApp persuasif (mewah, emosional, profesional) untuk broker properti Bali yang ingin mempresentasikan katalog properti kepada calon klien HNWI.
+
+Properti yang dipresentasikan:
+${list.map(p=>`- ${p.name} (${p.area}, ${fmtP(p.price)}, ${p.rooms>0?p.rooms+' KT':'Tanah'}): ${p.desc}`).join('\n')}
+
+Buat teks yang:
+1. Membuka dengan hook kuat tentang Bali sebagai paradise investasi
+2. Presentasi setiap properti dengan narasi singkat namun memikat
+3. Sertakan value proposition unik masing-masing
+4. Tutup dengan CTA kuat dan undangan viewing
+
+Max 350 kata, Bahasa Indonesia mewah.`;
+  try {
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:700,messages:[{role:'user',content:prompt}]})});
+    const data=await res.json();
+    document.getElementById('reply-content').textContent=data.content?.[0]?.text||'Gagal.';
+  }catch(e){document.getElementById('reply-content').textContent='⚠️ Gagal.';}
+}
+
+// ====================== PARSER ======================
+async function parseWithAI() {
+  const input=document.getElementById('parse-input').value.trim();
+  if(!input){notify('⚠️ Tempel teks dulu!','warn');return;}
+  const typeHint=document.getElementById('parse-type').value;
+  const res=document.getElementById('parse-result');
+  res.style.display='block';res.innerHTML='<div class="ai-loading"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div></div>';
+  const prompt=`Ekstrak data properti dari teks ini untuk CRM Bali. Tipe hint: "${typeHint}".
+Teks: "${input}"
+JSON: {"type":"Owner/Buyer","name":"nama","phone":"nomor","area":"area Bali","price":angka,"rooms":angka,"description":"detail","confidence":"High/Medium/Low"}
+Hanya JSON.`;
+  try {
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,messages:[{role:'user',content:prompt}]})});
+    const data=await r.json();
+    const raw=data.content?.[0]?.text||'{}';
+    const parsed=JSON.parse(raw.replace(/```json|```/g,'').trim());
+    res.innerHTML=`<div style="border:1px solid var(--gold);border-radius:7px;padding:11px;margin-bottom:10px">
+      <div style="color:var(--gold);font-weight:600;margin-bottom:7px;font-size:11.5px">✅ Hasil Ekstraksi AI</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;font-size:11px">
+        <div><span style="color:var(--td)">Tipe:</span> <strong>${parsed.type||'—'}</strong></div>
+        <div><span style="color:var(--td)">Nama:</span> <strong>${parsed.name||'—'}</strong></div>
+        <div><span style="color:var(--td)">Nomor:</span> <strong style="color:var(--teal)">${parsed.phone||'—'}</strong></div>
+        <div><span style="color:var(--td)">Area:</span> <strong>${parsed.area||'—'}</strong></div>
+        <div><span style="color:var(--td)">Harga:</span> <strong style="color:var(--gold)">${parsed.price?fmtP(parsed.price):'—'}</strong></div>
+        <div><span style="color:var(--td)">Kamar:</span> <strong>${parsed.rooms||'—'}</strong></div>
+      </div>
+      <div style="margin-top:7px;font-size:11px;color:var(--td)">${parsed.description||''}</div>
+      <div style="margin-top:6px;font-size:10px">Confidence: <span style="color:${parsed.confidence==='High'?'var(--green)':'var(--amber)'}">${parsed.confidence||'—'}</span></div>
+    </div>
+    <div style="display:flex;gap:7px">
+      <button onclick='saveParsed(${JSON.stringify(parsed).replace(/'/g,"&#39;")})' class="btn btn-gold" style="flex:1;justify-content:center">💾 Simpan</button>
+      <button onclick="clearParser()" class="btn btn-ghost">✕</button>
+    </div>`;
+  }catch(e){res.innerHTML='<div style="color:var(--red)">⚠️ Gagal. Coba lagi.</div>';}
+}
+
+function saveParsed(parsed) {
+  if(parsed.type==='Owner'||parsed.price>1000000){
+    DB.inventory.push({id:Date.now(),name:parsed.name||'Properti Baru',type:'Properti',area:parsed.area||'Unknown',price:parsed.price||0,rooms:parsed.rooms||0,size:0,ownerName:parsed.name,ownerPhone:parsed.phone||'',desc:parsed.description||'',lat:null,lng:null,followup:'New',contacted:'no',shortlisted:0,mediaFiles:[],mediaUrl:'',avail:'',createdAt:new Date().toISOString()});
+    logAct('Owner via Parser',parsed.name);notify('✅ Owner disimpan ke Inventory!');
+  }else{
+    DB.clients.push({id:Date.now(),name:parsed.name||'Client Baru',type:'Buyer',phone:parsed.phone||'',area:parsed.area||'',budget:parsed.price||0,rooms:parsed.rooms||0,status:'New',month:'',notes:parsed.description||''});
+    logAct('Buyer via Parser',parsed.name);notify('✅ Buyer disimpan!');
+  }
+  renderAll();clearParser();
+}
+
+function clearParser(){document.getElementById('parse-input').value='';document.getElementById('parse-result').style.display='none';}
+
+// ====================== SHARE MODE ======================
+function openShareMode() {
+  const sl=DB.inventory.filter(p=>p.shortlisted===1);
+  const list=sl.length>0?sl:DB.inventory;
+  const ov=document.getElementById('share-overlay');ov.classList.add('open');
+  document.getElementById('share-count-txt').textContent=list.length+' properti';
+
+  if(!shareMap){
+    shareMap=L.map('share-map',{zoomControl:true,attributionControl:false}).setView([-8.65,115.22],10);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{subdomains:'abcd'}).addTo(shareMap);
+  }
+  shareMarkers.forEach(m=>shareMap.removeLayer(m));shareMarkers=[];
+
+  list.forEach(p=>{
+    if(!p.lat||!p.lng)return;
+    const hasMedia=p.mediaFiles&&p.mediaFiles.length>0;
+    const icon=L.divIcon({
+      html:`<div style="width:32px;height:32px;background:#c9a96e;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;border:2px solid #fff;box-shadow:0 3px 12px rgba(0,0,0,0.6)">${p.type==='Tanah'?'🌿':'🏠'}</div>`,
+      className:'',iconSize:[32,32],iconAnchor:[16,16]
+    });
+    const m=L.marker([p.lat,p.lng],{icon}).addTo(shareMap);
+    const thumb=hasMedia?`<img src="${p.mediaFiles[0].dataUrl}" style="width:100%;height:80px;object-fit:cover;border-radius:6px 6px 0 0">`:
+      p.mediaUrl?`<img src="${p.mediaUrl}" style="width:100%;height:80px;object-fit:cover;border-radius:6px 6px 0 0" onerror="this.style.display='none'">`:
+      `<div style="text-align:center;font-size:32px;padding:14px;background:#111520">🏠</div>`;
+    m.bindPopup(`<div style="font-family:'IBM Plex Sans',sans-serif;color:#e9e5dd;min-width:200px;border-radius:10px;overflow:hidden">
+      ${thumb}<div style="padding:10px">
+        <div style="font-weight:600;color:#c9a96e;font-size:12px;margin-bottom:2px">${p.name}</div>
+        <div style="font-size:10.5px;color:#aaa;margin-bottom:4px">${p.area} · ${p.type}${p.rooms>0?' · '+p.rooms+' KT':''}</div>
+        <div style="font-size:13px;color:#e4ccaa;margin-bottom:8px">${fmtP(p.price)}</div>
+        ${p.lat?`<a href="https://maps.google.com/?q=${p.lat},${p.lng}" target="_blank" style="display:block;padding:5px;background:#c9a96e22;border:1px solid #c9a96e44;color:#c9a96e;border-radius:5px;cursor:pointer;font-size:11px;text-align:center;text-decoration:none">🗺️ Buka di Google Maps</a>`:''}
+      </div></div>`);
+    shareMarkers.push(m);
+  });
+
+  // sidebar list
+  const sl2=document.getElementById('share-list');
+  sl2.innerHTML=list.map(p=>{
+    const hasM=p.mediaFiles&&p.mediaFiles.length>0;
+    const imgHTML=hasM?`<img src="${p.mediaFiles[0].dataUrl}" style="width:100%;height:100px;object-fit:cover" onerror="this.style.display='none'">`:
+      p.mediaUrl?`<img src="${p.mediaUrl}" style="width:100%;height:100px;object-fit:cover" onerror="this.style.display='none'">`:
+      `<div class="scard-img">🏠</div>`;
+    return `<div class="scard">
+      <div style="overflow:hidden">${imgHTML}</div>
+      <div class="scard-body">
+        <div class="scard-name">${p.name}</div>
+        <div style="font-size:10px;color:var(--td);margin-bottom:3px">${p.area} · ${p.rooms>0?p.rooms+' KT':'Land'}</div>
+        <div class="scard-price">${fmtP(p.price)}</div>
+        ${p.avail?`<div style="font-size:10px;color:var(--td);margin-top:2px">📅 ${p.avail}</div>`:''}
+        ${p.lat?`<a href="https://maps.google.com/?q=${p.lat},${p.lng}" target="_blank" style="display:block;margin-top:6px;padding:5px;background:rgba(72,184,122,0.12);border:1px solid rgba(72,184,122,0.25);color:var(--green);border-radius:5px;font-size:10.5px;text-align:center;text-decoration:none">🗺️ Lihat Lokasi</a>`:''}
+        <button onclick="waSendToClient(null,'${p.name}','${p.area}',${p.price})" style="width:100%;margin-top:4px;padding:5px;background:rgba(201,169,110,0.12);border:1px solid rgba(201,169,110,0.25);color:var(--gold);border-radius:5px;cursor:pointer;font-size:10.5px">📱 Tanya via WA</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  setTimeout(()=>{shareMap.invalidateSize();if(shareMarkers.length){const g=L.featureGroup(shareMarkers);shareMap.fitBounds(g.getBounds().pad(0.2));}},200);
+}
+
+function closeShareMode(){document.getElementById('share-overlay').classList.remove('open');}
+
+function shareViaWA() {
+  const sl=DB.inventory.filter(p=>p.shortlisted===1);
+  const list=sl.length>0?sl:DB.inventory.slice(0,5);
+  const text=`*🏠 Katalog Properti Pilihan — Bali*\n\n`+
+    list.map((p,i)=>`*${i+1}. ${p.name}*\n📍 ${p.area} · ${p.type}\n💰 ${fmtP(p.price)}${p.rooms>0?'\n🛏 '+p.rooms+' Kamar':''}${p.avail?'\n📅 '+p.avail:''}${p.lat?'\n🗺️ https://maps.google.com/?q='+p.lat+','+p.lng+'\n':'\n'}${p.desc?p.desc.substring(0,80)+'…':''}`).join('\n\n')+
+    `\n\n_Ingin lihat properti lainnya? Kami siap jadwalkan viewing langsung!_`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`,'_blank');
+}
+
+function copyShareInfo() {
+  const sl=DB.inventory.filter(p=>p.shortlisted===1);
+  const list=sl.length>0?sl:DB.inventory.slice(0,5);
+  const text=`🏠 SHORTLIST PROPERTI BALI\n\n`+list.map((p,i)=>`${i+1}. ${p.name}\n   📍 ${p.area} · ${fmtP(p.price)}${p.lat?'\n   🗺️ maps.google.com/?q='+p.lat+','+p.lng:''}`).join('\n\n');
+  navigator.clipboard.writeText(text).then(()=>notify('🔗 Info shortlist dicopy!'));
+}
+
+// ====================== KML ======================
+function importKML(input) {
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const parser=new DOMParser();
+    const kml=parser.parseFromString(e.target.result,'text/xml');
+    const placemarks=kml.querySelectorAll('Placemark');
+    let count=0;
+    placemarks.forEach((pl,i)=>{
+      const name=pl.querySelector('name')?.textContent||'KML Point '+(i+1);
+      const desc=pl.querySelector('description')?.textContent||'';
+      const coords=pl.querySelector('Point coordinates')?.textContent?.trim();
+      if(coords){
+        const parts=coords.split(',');const lng=parseFloat(parts[0]);const lat=parseFloat(parts[1]);
+        if(!isNaN(lat)&&!isNaN(lng)){
+          DB.inventory.push({id:Date.now()+i,name,type:'KML Import',area:'Imported',price:0,rooms:0,size:0,ownerName:'',ownerPhone:'',desc,lat,lng,followup:'New',contacted:'no',shortlisted:0,mediaFiles:[],mediaUrl:'',avail:'',createdAt:new Date().toISOString()});
+          count++;
+        }
+      }
+    });
+    document.getElementById('kml-res').style.display='block';
+    document.getElementById('kml-res').textContent=`✅ ${count} titik KML diimport!`;
+    renderAll();closeModal('kml');
+    notify(`✅ ${count} titik dari Google Earth diimport!`);
+    logAct('KML Import',count+' titik dari '+file.name);
+  };
+  reader.readAsText(file);input.value='';
+}
+
+// ====================== HELPERS ======================
+function waCall(phone,name) {
+  if(!phone){notify('⚠️ Nomor WA tidak tersedia','warn');return;}
+  const text=`Halo ${name||''}, saya broker properti Bali. Ada sesuatu yang ingin saya diskusikan.`;
+  window.open(`https://wa.me/${phone.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(text)}`,'_blank');
+}
+function waSendToClient(phone,name,area,price) {
+  const text=`Halo! Saya ingin menawarkan:\n\n*${name}*\n📍 ${area}\n💰 ${fmtP(price)}\n\nTertarik untuk info lebih lanjut?`;
+  const url=phone?`https://wa.me/${phone.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(text)}`:`https://wa.me/?text=${encodeURIComponent(text)}`;
+  window.open(url,'_blank');
+}
+function copyReply(){navigator.clipboard.writeText(document.getElementById('reply-content').textContent).then(()=>notify('📋 Teks dicopy!'));}
+function sendViaWA(){
+  const text=document.getElementById('reply-content').textContent;
+  const url=replyWAPhone?`https://wa.me/${replyWAPhone.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(text)}`:`https://wa.me/?text=${encodeURIComponent(text)}`;
+  window.open(url,'_blank');
+}
+function fmtP(n){if(!n||n===0)return'Harga N/A';if(n>=1e12)return'Rp '+(n/1e12).toFixed(1)+' T';if(n>=1e9)return'Rp '+(n/1e9).toFixed(1)+' M';if(n>=1e6)return'Rp '+(n/1e6).toFixed(0)+' Jt';return'Rp '+n.toLocaleString('id-ID');}
+function parsePrice(v){if(!v)return 0;const c=v.toString().replace(/[^0-9.]/g,'');const n=parseFloat(c);if(isNaN(n))return 0;return n>1e8?n:n*1e9;}
+function logAct(action,detail){activityLog.unshift({time:new Date(),action,detail});const el=document.getElementById('activity-list');if(!el)return;el.innerHTML=activityLog.slice(0,30).map(a=>`<div style="padding:6px 0;border-bottom:1px solid var(--border2)"><div style="font-weight:500;color:var(--text);font-size:11.5px">${a.action}</div><div style="font-size:10.5px;color:var(--td)">${a.detail}</div><div style="font-size:10px;color:rgba(255,255,255,0.18);margin-top:1px">${a.time.toLocaleTimeString('id-ID')}</div></div>`).join('');}
+function notify(msg,type='ok'){const el=document.getElementById('notif');el.textContent=msg;el.style.display='block';el.style.borderColor=type==='warn'?'var(--amber)':type==='info'?'var(--blue)':type==='match'?'var(--green)':'var(--gold)';clearTimeout(notifT);notifT=setTimeout(()=>el.style.display='none',3000);}
+
+function switchSection(name){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.ntab,.nav-item').forEach(t=>t.classList.remove('active'));
+  const t=document.getElementById('section-'+name);if(t)t.classList.add('active');
+  document.querySelectorAll('.ntab').forEach(t=>{if(t.getAttribute('onclick')?.includes("'"+name+"'"))t.classList.add('active');});
+  document.querySelectorAll('.nav-item').forEach(t=>{if(t.getAttribute('onclick')?.includes("'"+name+"'"))t.classList.add('active');});
+  if(name==='map')setTimeout(()=>map&&map.invalidateSize(),60);
+}
+function switchRPanel(name){
+  document.querySelectorAll('.rpanel-content').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.rtab').forEach(t=>t.classList.remove('active'));
+  const el=document.getElementById('rp-'+name);if(el)el.classList.add('active');
+  document.querySelectorAll('.rtab').forEach(t=>{if(t.getAttribute('onclick')?.includes("'"+name+"'"))t.classList.add('active');});
+}
+function openModal(name){document.getElementById('modal-'+name)?.classList.add('open');}
+function closeModal(name){document.getElementById('modal-'+name)?.classList.remove('open');}
+function openKMLModal(){openModal('kml');}
+document.querySelectorAll('.mbk').forEach(b=>{b.addEventListener('click',e=>{if(e.target===b){b.classList.remove('open');resetInvForm();resetCliForm();}});});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.mbk.open').forEach(m=>m.classList.remove('open'));if(document.getElementById('share-overlay').classList.contains('open'))closeShareMode();if(document.getElementById('lightbox').classList.contains('open'))closeLB();if(addPinMode)toggleAddPin();}});
+new MutationObserver(()=>{if(shareMap)setTimeout(()=>shareMap.invalidateSize(),150);}).observe(document.getElementById('share-overlay'),{attributes:true,attributeFilter:['class']});
+</script>
+</body>
+</html>
